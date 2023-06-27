@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>Roland FP-60/FP-90 Registration Editor: Edit Registration</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="Keywords" content="Roland,FP-60,FP-90,Registration">
+<meta name="Description" content="Simple editor for Roland FP-60 and FP-90 custom Registration (.UPG) files.">
+<meta name="robots" content="index, follow">
+
+<style>
+.tonelist {
+   font-family: "Lucida Console", Monaco, Menlo, "Bitstream Vera", "Deja Vu", monospace
+}
+
+.notetext {
+   box-sizing: border-box;
+   width: 100%;
+}
+
+</style>
+</head>
+
+<body onload="onLoad();">
+<script src="Roland_FP90_tones.js"></script>
+<script src="edit_reg.js"></script>
+
+<script>
+//-----------------------------------------------------------------------------
+// Names of editor controls, most of which match Registration key names
+// Drives the editor
+var g_miscItemNames = [
+   'name',
+   'comment',
+
+   'singleTone',                // Generated from MSB/LSB/PC
+   //'singleToneMSB',
+   //'singleToneLSB',
+   //'singleTonePC',
+
+   'splitLowerTone',            // Generated from MSB/LSB/PC
+   //'splitLowerToneMSB',
+   //'splitLowerToneLSB',
+   //'splitLowerTonePC',
+
+   'dualTone2',                 // Generated from MSB/LSB/PC
+   //'dualTone2MSB',
+   //'dualTone2LSB',
+   //'dualTone2PC',
+
+   'keyboardMode',
+   'splitOctaveShift',
+   'splitUpperOctaveShift',
+   'splitPoint',
+   'dualOctaveShift',
+   'dualTone1OctaveShift',
+
+   'damperPedalPart',
+   'centerPedalPart',
+   'centerPedalFunc',
+   'leftPedalPart',
+   'leftPedalFunc',
+
+   'rotarySpeed',
+   'modulationSpeed',
+   'upperVolume',
+   'lowerVolume',
+
+   'ambience',
+   'keyTouch',
+   'keyTranspose',
+   'songTranspose',
+
+   'midiTxCh',
+   'registrationTxCh',
+   'registrationBankMSB',
+   'registrationBankLSB',
+   'registrationPC',
+
+   'micCompSw',
+   'micCompType',
+   'micDoublingSw',
+   'micDoublingType',
+   'micDoublingWidth',
+   'micDoublingLevel',
+   'micEchoSw',
+   'micEchoType',
+   'micEchoLevel',
+
+   'splitBalance',
+   'dualBalance',
+   'twinPianoMode'
+];
+
+// Relative URL to the main editor page (list)
+var g_editRegPage = 'edit_list.html';
+
+//-----------------------------------------------------------------------------
+// Initialization
+function onLoad()
+{
+   // Create maps of the Tone list indexed by Name and Bank
+   g_toneList = new ToneList( g_Roland_FP90_tones );
+
+   g_changeFlag = new ChangeFlag( 'save' );
+
+   // Fill the Tone drop-lists
+   g_toneList.FillList( 'singleTone', true );
+   g_toneList.FillList( 'splitLowerTone', true );
+   g_toneList.FillList( 'dualTone2', true );
+
+   // Fill the split point drop-list
+   FillNoteNameList( 'splitPoint' );
+
+   // We operate on parameters given to us in sessionData.
+   if (sessionStorage.getItem( 'fp_regVersion' ) == g_sessionDataCookie ) {
+      // Same version.  COULD do more sanity checks here
+      g_filename = sessionStorage.getItem( 'fp_regFile' );
+      g_filename = sessionStorage.getItem( 'fp_regFile' );
+      g_selectedRow = sessionStorage.getItem( 'fp_regNumber' ) - 1;
+      try {
+         g_upg = JSON.parse( sessionStorage.getItem( 'fp_regData' ) );
+      }
+      catch(e) {
+         // Failed to read.  Return to main edit page below
+         alert( e.toString() );
+         g_filename = '';
+         g_selectedRow = -1;
+         g_upg = null;
+      }
+   }
+
+   if (g_upg == null) {
+      // We don't have the necessary data.  Force to the main edit page
+      window.location.replace( g_editRegPage );
+   }
+
+   // Fill the edit controls
+   let reg = g_upg.registration[ g_selectedRow ];
+
+   // Page title
+   let control = document.getElementById( 'Location' );
+   control.innerHTML = 'Edit Registration ' + (g_selectedRow+1) + ' (' +
+                       RegIndexAsLocation( g_selectedRow ) + ')';
+
+   for (let ix = 0; ix < g_miscItemNames.length; ix++)
+   {
+      let propID = g_miscItemNames[ix];
+      let control = document.getElementById( propID );
+      if (control != null)
+      {
+         let value = GetSafeRegProperty( reg, propID );
+         if ((value == null) && (propID in g_defaultRegValues))
+         {
+            // No value in local storage: get a default value
+            value = g_defaultRegValues[ controlID ];
+         }
+
+         if (value != null) {
+            SetControlValue( control, value );
+         }
+
+         // Ask to be notified when the control changes
+         control.onchange = onChanged;
+      }
+   }
+
+   // Hook up handler to toggle hiding
+   // TODO: Ideally, a cookie or localStorage parameter would persist the
+   // user's preferences and hide as requested.
+   document.getElementById( 'Microphone' ).onclick = toggleHide;
+   document.getElementById( 'MIDI' ).onclick = toggleHide;
+   document.getElementById( 'Cruft' ).onclick = toggleHide;
+}
+
+//-----------------------------------------------------------------------------
+// Callback when a control changes
+function onChanged( a_event )
+{
+   g_changeFlag.Set();
+}
+
+//-----------------------------------------------------------------------------
+// Save
+function onSave()
+{
+   if (g_changeFlag.Changed()) {
+      // Save changed user data into the Registration object
+      let reg = g_upg.registration[ g_selectedRow ];
+      for (let ix = 0; ix < g_miscItemNames.length; ix++)
+      {
+         let propID = g_miscItemNames[ix];
+         let control = document.getElementById( propID );
+         if (control != null) {
+
+            let value = GetControlValue( control );
+            SetSafeRegProperty( reg, propID, value );
+         }
+      }
+
+      // Serialize the registration and write it back to sessionStorage
+      sessionStorage.setItem( 'fp_regData', JSON.stringify( g_upg ) );
+
+      // Send a change indicator back to the list page
+      sessionStorage.setItem( 'fp_changed', true );
+   }
+
+   window.location.replace( g_editRegPage );
+}
+
+//-----------------------------------------------------------------------------
+// Cancel
+function onCancel()
+{
+   if (g_changeFlag.Changed()) {
+      if (!window.confirm( 'You have unsaved changes.\n'
+                         + 'Press OK to discard them, or Cancel to remain on this page.' )) {
+         // User pressed CANCEL: stay here
+         return;
+      }
+   }
+
+   // Just go home.  We haven't changed any fp_xxxx
+   window.location.replace( g_editRegPage );
+}
+
+//-----------------------------------------------------------------------------
+// Toggle the content of the frameset whose legend is clicked.
+// Assumes that content is wrapped in a <div>
+// TODO: consider using a cookie or localStorage to persist these states, and
+// restoring them on onLoad.
+function toggleHide( a_event )
+{
+   let control = a_event.target.nextElementSibling;
+   if (control != null) {
+      let disp = control.style.display;
+      if (disp != '') {
+         control.style.display = '';
+      }
+      else
+      {
+         control.style.display = 'none';
+      }
+   }
+}
+
+</script>
+
+<h1 id="Location">Edit</h1>
+
+<input type="button" value="Save" id='save' onclick="onSave();">
+<input type="button" value="Cancel" onclick="onCancel();">
+<label>&nbsp;Name <input id="name" size="12" maxlength="12">
+<input type="button" value="?" onclick="onHelp('name');">
+</label>
+
+<p>
+<fieldset><legend>Notes&nbsp;<input type="button" value="?" onclick="onHelp('comment');">
+</legend>
+   <textarea id="comment" maxlength="640" cols="64" wrap="soft" class="notetext"></textarea>
+</fieldset>
+
+<fieldset><legend>Main/Upper Tone&nbsp;<input type="button" value="?" onclick="onHelp('singleTone');"></legend>
+  <label>Tone <select id="singleTone" class=tonelist><option>Tone Names</option></select></label>
+  <a href="tones.html">More about Tones</a>
+  <label>&nbsp;Volume <input id="upperVolume" type="number" min="0" max="100" value="100" style="width:4em"></label>
+  <p>
+  <label>Ambience <input id="ambience" type="number" min="0" max="10" value="0" style="width:3em"></label>
+  <label>&nbsp;Effect Level <input id="modulationSpeed" type="number" min="0" max="100" value="0" style="width:4em"></label>
+  <label>&nbsp;Rotary Effect <select id="rotarySpeed">
+      <option>Initially Off</option>
+      <option selected>Initially On</option>
+    </select></label> Note that you can use a pedal function to toggle the rotary speaker effect.
+  <p>
+  <label>Key Touch <input id="keyTouch" type="number" min="0" max="100" value="50" style="width:4em"></label>
+  <label>&nbsp;Key Transpose <input id="keyTranspose" type="number" min="-6" max="5" value="0" style="width:4em"></label>
+  <label>&nbsp;Song Transpose <input id="songTranspose" type="number" min="-12" max="12" value="0" style="width:4em"></label>
+</fieldset>
+<p>
+<fieldset><legend>Single/Dual/Split&nbsp;<input type="button" value="?" onclick="onHelp('keyboardMode');"></legend>
+  <label>Initial Mode <select id="keyboardMode">
+      <option selected>Single</option> <option>Split</option> <option>Dual</option>
+    </select></label>
+  <label>&nbsp;Lower/Second Volume <input id="lowerVolume" type="number" min="0" max="100" value="100" style="width:4em"></label>
+  <fieldset><legend>Split</legend>
+    <label>Lower Tone <select id="splitLowerTone" class=tonelist><option>Tone Name goes here</option></select></label>
+    <label>&nbsp;Split Point <select id="splitPoint"><option>F#3 (MIDI note 54)</option></select></label>
+    <label>&nbsp;Upper Octave Shift <input id="splitUpperOctaveShift" type="number" min="-2" max="2" style="width:4em"></label>
+    <label>&nbsp;Lower Octave Shift <input id="splitOctaveShift" type="number" min="-2" max="2" style="width:4em"></label>
+  </fieldset>
+  <fieldset><legend>Dual</legend>
+    <label>Second Tone <select id="dualTone2" class=tonelist><option>Tone Name goes here</option></select></label>
+    <label>&nbsp;Main Octave Shift <input id="dualTone1OctaveShift" type="number" min="-2" max="2" value="0" style="width:4em"></label>
+    <label>&nbsp;Second Octave Shift <input id="dualOctaveShift" type="number" min="-2" max="2" value="0" style="width:4em"></label>
+  </fieldset>
+</fieldset>
+<p>
+<fieldset><legend>Pedals&nbsp;<input type="button" value="?" onclick="onHelp('damperPedalPart');"></legend>
+  <label>Right pedal affects <select id="damperPedalPart">
+      <option selected>Both</option>
+      <option>Main</option>
+      <option>Lower/Second</option>
+    </select></label>
+  <label>&nbsp;Function: Damper</label>
+  <p>
+  <label>Center pedal affect s<select id="centerPedalPart">
+      <option selected>Both</option>
+      <option>Main</option>
+      <option>Lower/Second</option>
+    </select></label>
+  <label>&nbsp;Function <select id="centerPedalFunc">
+      <option selected>Sustenuto</option>
+      <option>Play/Stop</option>
+      <option>Layer 2 volume (analog)</option>
+      <option>Expression (analog)</option>
+      <option>Master expression (analog)</option>
+      <option>Bend up (analog)</option>
+      <option>Bend down (analog)</option>
+      <option>Modulation (analog)</option>
+      <option>Mic doubling</option>
+      <option>Mic echo</option>
+      <option>Rotary toggle on/off</option>
+    </select></label>
+  <p>
+  <label>Left pedal affects <select id="leftPedalPart">
+      <option selected>Both</option>
+      <option>Main</option>
+      <option>Lower/Second</option>
+    </select></label>
+  <label>&nbsp;Function <select id="leftPedalFunc">
+      <option selected>Soft</option>
+      <option>Play/Stop</option>
+      <option>Layer 2 volume (analog)</option>
+      <option>Expression (analog)</option>
+      <option>Master expression (analog)</option>
+      <option>Bend up (analog)</option>
+      <option>Bend down (analog)</option>
+      <option>Modulation (analog)</option>
+      <option>Mic doubling</option>
+      <option>Mic echo</option>
+      <option>Rotary toggle on/off</option>
+    </select></label>
+</fieldset>
+<p>
+<fieldset><legend id="MIDI">MIDI&nbsp;<input type="button" value="?" onclick="onHelp('midiTxCh');"></legend>
+<div>
+  <label>Keyboard MIDI Tx Channel (0 disables) <input id="midiTxCh" type="number" min="0" max="16" value="0" style="width:4em"></label>
+  <p>
+  <fieldset><legend>Send When this Registration is Selected</legend>
+    <label>MIDI Tx channel (0 disables) <input id="registrationTxCh" type="number" min="0" max="16" value="0" style="width:4em"></label>
+    <label>&nbsp;Bank MSB <input id="registrationBankMSB" type="number" min="0" max="127" value="0" style="width:4em"></label>
+    <label>&nbsp;Bank LSB <input id="registrationBankLSB" type="number" min="0" max="127" value="0" style="width:4em"></label>
+    <label>&nbsp;Program <input id="registrationPC" type="number" min="0" max="127" value="0" style="width:4em"></label>
+  </fieldset>
+</div>
+</fieldset>
+<p>
+<fieldset><legend id="Microphone">Microphone&nbsp;<input type="button" value="?" onclick="onHelp('micCompSw');"></legend>
+<div>
+  <label>Compressor <input id="micCompSw" type="checkbox"></label>
+  <label>&nbsp;Compressor Type <select id="micCompType">
+      <option>Soft</option>
+      <option>Normal</option>
+      <option selected>Hard</option>
+    </select></label>
+  <label>&nbsp;Doubling <input id="micDoublingSw" type="checkbox"></label>
+  <label>&nbsp;Doubling Type <select id="micDoublingType">
+      <option selected>One Voice</option>
+      <option>Two Voices</option>
+    </select></label>
+  <label>&nbsp;Doubling Width <select id="micDoublingWidth">
+      <option selected>Light</option>
+      <option>Normal</option>
+      <option>Deep</option>
+    </select></label>
+  <label>&nbsp;Doubling Level <input id="micDoublingLevel" type="number" min="0" max="10" value="0" style="width:4em">
+  <p>
+  <label>Echo<input id="micEchoSw" type="checkbox"></label>
+  <label>&nbsp;Echo Type <input id="micEchoType" type="number" min="0" max="7" value="0" style="width:4em"></label>
+  <label>&nbsp;Echo Level <input id="micEchoLevel" type="number" min="0" max="10" value="0" style="width:4em"></label>
+</div>
+</fieldset>
+<p>
+<fieldset><legend id="Cruft">Probable Cruft&nbsp;<input type="button" value="?" onclick="onHelp('splitBalance');"></legend>
+<div>
+  <label>Split Balance <input id="splitBalance" type="number" min="-5" max="5" value="0" style="width:4em">
+  <label>&nbsp;Dual Balance <input id="dualBalance" type="number" min="-5" max="5" value="0" style="width:4em">
+  <label>&nbsp;Twin Piano Mode <input id="twinPianoMode" type="checkbox"></label>
+</div>
+</fieldset>
+
+<DIV TYPE=FOOTER>
+  <P ALIGN=CENTER STYLE="margin-top: 0.35in; margin-bottom: 0in">
+  Updated 28 February 2020.  Copyright © 2020 by John Hartman, The Old Bald Geek.
+  </P>
+</DIV>
+</body></html>

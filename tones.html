@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>Roland FP-60/FP-90 Annotated Tone List</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="Keywords" content="Roland,FP-60,FP-90,Registration,Tones">
+<meta name="Description" content="Tone information for Roland FP-60 and FP-90 pianos.">
+<meta name="robots" content="index, follow">
+
+<style>
+table.scrolldown {
+   font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+   border: 1px solid #ddd;
+   border-collapse: collapse;
+   width: 100%;
+}
+
+table.scrolldown td, table.scrolldown th {
+   border: 1px solid #ddd;
+   padding-left: 8px;
+}
+
+table.scrolldown tr:nth-child(even) {
+   background-color: #f2f2f2;
+}
+
+table.scrolldown thead th {
+   padding-top: 8px;
+   padding-bottom: 8px;
+   text-align: left;
+   background-color: #4CAF50;
+   color: white;
+}
+
+table.scrolldown.selected {
+   color: red;
+}
+
+.tablebuttons {
+   vertical-align: top;
+   width: 20%;
+}
+
+.tablecontent {
+   width: 80%;
+}
+
+.tablebutton {
+   width: 100%;
+   margin-bottom: 5px;
+   margin-right: 50px;
+}
+
+</style>
+</head>
+
+<body onload="onLoad();">
+<script src="Roland_FP90_tones.js"></script>
+<script src="edit_reg.js"></script>
+
+<script>
+
+//-----------------------------------------------------------------------------
+// Initialization
+function onLoad()
+{
+   // Create maps of the Tone list indexed by Name and Bank
+   g_toneList = new ToneList( g_Roland_FP90_tones );
+
+   // Fill the list
+   var table = document.getElementById( 'tones' );
+
+   for (var ix=0; ix < g_toneList.toneArray.length; ix++) {
+      let row = table.insertRow();
+      let tone = g_toneList.toneArray[ix];
+
+      cell = row.insertCell();
+      text = document.createTextNode( tone.Name );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( tone.Location );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( tone.Category );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( tone.modulationSpeed );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( tone.modulation_effect );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( tone.rotarySpeed );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( tone.Notes );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( tone.MSB );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( tone.LSB );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( tone.PC );
+      cell.appendChild(text);
+   }
+}
+
+</script>
+
+<a href="index.html">
+<IMG src="KittyRegSet.png" alt="Old Bald Geek's Roland Piano Information"  width=180 height=116 border=0>
+</a>
+
+<h1>Roland FP-60/FP-90 Tones</h1>
+
+<p>This page shows the Tones available on the Roland FP-60 and FP-90 digital pianos.
+<ul>
+<li>"Name" is the Tone name as shown on the piano
+<li>"Location" is the location of the Tone: button, then index
+<li>"Category" is an attempt to group Tones as piano, bass, reed, etc.
+<li>"Modulation Amount" is the default amount of modulation for the Tone.  An
+empty cell means there is no modulation effect for the Tone
+<li>"Modulation Effect" tells what the modulation does
+<li>"Rotary Effect" tells whether the Tone supports a rotary speaker effect
+<li>"Notes" contain general comments on the Tone
+<li>"MIDI..." shows the MIDI Bank and Program number for the Tone
+</ul>
+
+<fieldset><legend>Tones</legend>
+   <table class="scrolldown" id="tones">
+      <thead>
+         <tr id="toneHeaderRow">
+            <th>Name</th>
+            <th>Location</th>
+            <th>Category</th>
+            <th>Modulation<br>Amount</th>
+            <th>Modulation<br>Effect</th>
+            <th>Rotary<br>Effect</th>
+            <th>Notes</th>
+            <th>MIDI Bank<br>MSB</th>
+            <th>MIDI Bank<br>LSB</th>
+            <th>MIDI Bank<br>PC</th>
+         </tr>
+      </thead>
+
+      <tbody id="registrationBody">
+      </tbody>
+   </table>
+</fieldset>
+
+<DIV TYPE=FOOTER>
+  <P ALIGN=CENTER STYLE="margin-top: 0.35in; margin-bottom: 0in">
+  Updated 4 February 2020.  Copyright © 2020 by John Hartman, The Old Bald Geek.
+  </P>
+</DIV>
+
+</body></html>

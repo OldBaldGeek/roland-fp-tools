@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>The Old Bald Geek's Roland Piano Pages</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="Keywords" content="Roland,FP-60,FP-90,Registration,MIDI,UPG">
+<meta name="Description" content="Editing Roland FP-60 and FP-90 custom Registration (.UPG) files.">
+<meta name="robots" content="index, follow">
+<STYLE TYPE="text/css">
+   P { font-family: "Times New Roman", serif; font-size: 12pt }
+   P.indent { font-family: "Times New Roman", serif; font-size: 12pt }
+</STYLE>
+</head>
+
+<body>
+<h1>The Old Bald Geek's Roland Piano Pages</h1>
+<IMG src="KittyRegSet.png" alt="Old Bald Geek's Roland Piano Information"  width=718 height=464 border=0>
+
+<P>The Roland FP-60 and FP-90 are wonderful instruments: great sound,
+great feel under the fingers.  But a number of features are not well
+documented, or are clumsy to use.  These pages are an attempt to improve
+the usability of these pianos.</p>
+
+<P>The information on these pages is based on information in the
+&ldquo;FP-90 Owner's Manual&rdquo; and 
+&ldquo;FP-90 / FP-60 MIDI Implementation&rdquo;, both
+<a href="https://www.roland.com/global/support/by_product/fp-90/owners_manuals/" target="_blank">
+available on the Roland website;</a> and 
+on experiments with my FP-90 running software version 1.05.  If you get
+different results on your piano, please let me know what model and
+software version you have.  The software version of your piano is
+shown by Function 37, &ldquo;Version.&rdquo;</P>
+
+<H2>Editing and Using Custom Registrations</H1>
+
+<P>The editable Registrations on the Roland FP-60 and FP-90 can be very handy, but</P>
+<UL>
+   <LI>they are a pain to edit using the buttons on the piano</LI>
+   <LI>once you select a Registration, some built-in Tones may not behave the same way as before</LI>
+</UL>
+<P>These pages attempt to address both issues.
+For more information, select one of these topics:</P>
+<UL>
+   <li><a href="edit_list.html">Go to the Registration Editor</a>
+   <li><a href="#deciphering">Deciphering and Editing Roland Registration Files</a>
+   <li><a href="#sideEffects">Side Effects of Using Registrations<a>
+   <li><a href="tones.html">Information about the Tones and their capabilities<a>
+   <li><a href="#pedalUsage">Pedal Usage</a>
+   <li><a href="#registrationIdeas">Ideas for Using Registrations</a>
+   <li><a href="#midiTips">MIDI Tips</a>
+   <li><a href="#spelunking">MIDI Spelunking</a>
+   <li><a href="#hardwareNotes">Hardware Notes</a>
+   <li><a href="https://www.youtube.com/watch?v=Z3eKSgdXG6E&t=162s" 
+    target="_blank">The badly produced YouTube video</a> that started this project.</P>
+</UL>
+
+<H2 id="deciphering">Deciphering and Editing Roland Registration Files</H2>
+
+<P>You can save the
+piano's current sound, including Tone, single/split/dual mode,
+ambience, volume, transpose, touch setting, pedal options, and
+microphone settings to a Registration using the procedure &ldquo;Saving
+Current Settings into a Registration&rdquo; in the Owner's Manual.</P>
+
+<P>This works, but unless
+you spent a lot of time in video arcades in the mid 1980s, editing
+the name of the Registration one character at a time is a real pain, and
+editing the other options are not much better.</P>
+
+<P>You can export the
+current set of 30 Registrations to a USB drive by using Function 24,
+&ldquo;Reg. Set Export&rdquo;, and import a set of Registrations from
+a USB drive by using Function 25, &ldquo;Reg. Set Import.&rdquo;</P>
+
+<P>If you save a set of
+Registrations to a USB drive, and then plug the drive into a
+computer, you will find a file with a name like &ldquo;REG__001.UPG&rdquo;,
+or whatever name you used when you saved the Registrations.</P>
+
+<P>If you open the file with a decent text editor, you should see
+something like the text shown below.  The file has &ldquo;Linux line endings&rdquo;,
+with a line-feed (AKA newline) at the end of each line.  If you see a jumble of
+text wrapping around the screen, it means that your editor wants
+&ldquo;Windows (or DOS) line endings&rdquo; with both carriage-return
+and line-feed at the end of each line.  Many text editors, free
+and otherwise, can handle the Linux line endings.  Notepad2 and
+Notepad++ are both good choices, but there are hundreds of others. 
+And the version of Notepad included in recent updates of Windows 10
+supports Linux line endings, only 25 years later than everyone else.</P>
+<PRE><FONT FACE="Courier New, monospace">
+{
+    &quot;title&quot;: &quot;PianoRegistration&quot;,
+    &quot;formatVersion&quot;: 2,
+    &quot;registrationPedalShift&quot;: 0,
+    &quot;registration&quot;: [
+        {
+            &quot;name&quot;: &quot;ConcertPiano&quot;,
+            &quot;ambience&quot;: 2,
+            &quot;keyTouch&quot;: 50,
+            &quot;keyTranspose&quot;: 0,
+            &quot;songTranspose&quot;: 0,
+            &quot;keyboardMode&quot;: 0,
+            &quot;singleToneMSB&quot;: 0,
+            &quot;singleToneLSB&quot;: 68,
+            &quot;singleTonePC&quot;: 0,
+            ...
+            &quot;registrationBankMSB&quot;: 0,
+            &quot;registrationBankLSB&quot;: 0,
+            &quot;registrationPC&quot;: 0
+        }
+    ]
+}</FONT></PRE>
+
+<P>If you are geek like me, you might recognize this as JSON format.</P>
+
+<P>You certainly <b>can</b> edit this file with a text editor
+and import the file on the piano.  But you will probably find it much easier
+or use our <a href="edit_list.html">on-line Registration Editor.</a></P>
+
+<P>If you decide to go commando and edit the file by hand,
+note that the file as exported from the piano has exactly 1447 lines: 5 lines of header, 
+30 sets of 48 lines, one for each Registration, and two final lines.
+Before you save your changes, make sure that you have exactly 1447 lines.
+Files edited using the on-line Registration Editor may have more lines if
+you add notes and comments.</P>
+
+<P>If you mangle the file
+by omitting a line, missing a quotation mark etc., the piano may show
+&ldquo;Error 14&rdquo; when you try to import it.  It can be useful
+to open the original REG__001.UPG and your edited file and place them
+side by side to check for differences.  Or use a diff utility to
+compare the files.</P>
+
+<P>
+<a href="edit_help.html">Read the details</a> about the items in the Registration file
+or <a href="edit_list.html">use the on-line Registration Editor.</a></P>
+
+
+<H2 id="sideEffects">Side Effects of Using Registrations</H2>
+
+<P CLASS="western" STYLE="margin-bottom: 0in; font-style: normal">
+When you select a Registration, <a href="edit_help.html">46 parameters are set</a>.
+</P>
+
+<P>In contrast, when you select one of the built-in Tones, only <I>some</I>
+of these parameters are set &ndash; the remaining parameters retain
+their previous values.  That can result in the selected Tone not
+sounding like you expect it to.</P>
+
+<P>For example, the default Registration 1-2, &ldquo;SuperLightSt&rdquo;,
+uses the Concert Piano Tone, but sets the <B><a href="edit_help.html#keyTouch">keyTouch</a></B>
+to 5 &ndash; <I>much</I> lighter
+than the default value of 50.  So only a very light touch is needed. 
+&ldquo;SuperLightSt&rdquo; also backs off <B><a href="edit_help.html#upperVolume">upperVolume</a></B>
+from 100 to 60, so the sound doesn't get too loud.</P>
+
+<P CLASS="western" STYLE="margin-bottom: 0in; font-style: normal">If
+you select the Registration &ldquo;SuperLightSt&rdquo;, and then
+press &ldquo;Exit&rdquo;, or press &ldquo;Registration&rdquo; again,
+the LCD shows &ldquo;Concert Piano&rdquo;.  But the touch is still
+set to 5, and the instrument doesn't respond at all like &ldquo;Concert
+Piano&rdquo; usually does.</P>
+
+<P>A useful hack is to reserve one Registration, probably 1-1, to be
+Concert Piano, resetting <B><a href="edit_help.html#keyTouch">keyTouch</a></B>,
+<B><a href="edit_help.html#upperVolume">upperVolume</a></B>,
+<B><a href="edit_help.html#lowerVolume">lowerVolume</a></B>,
+and other parameters to their &ldquo;normal&rdquo; states.  If you
+have tweaked your piano to your preferred &ldquo;normal&rdquo;, you
+may need to change the values in this Registration to match your
+changes.</P>
+
+<P CLASS="western" STYLE="margin-bottom: 0in; font-style: normal">If
+I were the Boss (nyuk nyuk) of Roland and could change the software,
+I would make a couple changes:</P>
+<OL>
+  <LI><P>Switching out of
+  Registration mode would restore whatever Tone and settings were in
+  effect before you entered Registration mode.</P>
+  
+  <LI><P>Most of the items
+  in the .UPG file would be optional: if a parameter was specified,
+  then selecting the Registration would change it in the sound.  If a
+  parameter was not specified, then that parameter would not be
+  changed in the sound.  I would find this particularly useful for
+  Transpose: if I set Transpose to suit a particular vocalist, it
+  would be nice to be able to switch between Registrations without
+  making a custom set for each transpose amount.</P>
+  
+  <LI><P>&ldquo;Split&rdquo;
+  mode has an editable split point.  It would be nice if &ldquo;Dual&rdquo;
+  mode had one as well, to specify the highest note of Tone 1.  Tone 2
+  would still cover the full range.  I would use this mostly to beef
+  up bass parts: on pipe organ sounds, you might set Tone 1 to be the
+  same sound as Tone 2, but down an octave, and have this effect cover
+  only the bottom few octaves where a pipe organ might use a 32-foot
+  coupler on the pedals.  Some of the tone-wheel organs sound a little
+  thin in the lower octaves.  You could double these octaves with on
+  one of the bass Tones.  You can <I>replace</I> the
+  organ sound with a split, but it would be nice to keep the
+  organ sound in there too.</P>
+  
+  <LI><P>
+  The default MIDI receive
+  channel would either be separately editable, follow &ldquo;MIDI
+  Transmit Channel&rdquo;, or be fixed at 1 for compatibility with
+  MIDI controllers that can't be edited to send on any other channel. 
+  I mean, <I>four</I>?</P>
+</OL>
+
+
+<H2 id="pedalUsage">Pedal Usage</H2>
+<P>The piano comes with a
+Roland DP-10.  This is an analog pedal that generates a continuous
+range of values rather than simply on and off like a foot switch. 
+The FP-60 and FP-90 support &ldquo;half damper&rdquo; operation, so
+you can use this pedal to get fine control of the damper (aka hold)
+effect.  I confess that after playing piano for 50 years I never knew
+there was such a thing as &ldquo;half damper&rdquo; until I got my FP-90.
+(This may be because few of the acoustic pianos I have encountered in my half
+century have been in good enough shape for the technique to be
+feasible: if the piano is out of adjustment, <I>some</I>
+dampers lift and <I>some</I> don't, which John Cage might have enjoyed, but I don't).</P>
+
+<P>If you don't intend to use half damper techniques, you might consider
+using a simple foot switch as your damper pedal, and connect the
+DP-10 that comes with the piano as the left or middle pedal.  That
+would let you use the analog pedal for functions like pitch bend,
+expression, or modulation.  See <B><a href="edit_help.html#centerPedalFunc">centerPedalFunc</a></B>
+and <B><a href="edit_help.html#leftPedalFunc">leftPedalFunc</a></B>
+above.  I use an old Roland switch pedal that is &ldquo;normally
+closed&rdquo;: the switch is closed when the pedal is not depressed. 
+The &ldquo;Troubleshooting&rdquo; section of the manual implies that
+the piano should also accept a normally open pedal.  As with most
+keyboards, any pedal, continuous or switched, must be connected to
+the piano before you turn the power on so that the piano can detect
+the unpressed state of the pedal.</P>
+
+<P>If you decide to use a foot switch as a damper pedal, you may want to
+turn &ldquo;damper noise&rdquo; off in Piano Designer.  Otherwise,
+the abrupt off/on pedal transition can cause a funky
+ghost-on-the-strings effect.</P>
+
+<P>Or buy an RPU-3 and have three luscious analog pedals.</P>
+
+
+<H2 id="registrationIdeas">Ideas for Using Registrations</H2>
+<OL>
+  <LI><P>As mentioned above, reserve
+  one Registration, probably Piano-1, to be Concert Piano, resetting
+  <B><a href="edit_help.html#keyTouch">keyTouch</a></B>,
+  <B><a href="edit_help.html#upperVolume">upperVolume</a></B>,
+  <B><a href="edit_help.html#lowerVolume">lowerVolume</a></B> and other
+  parameters to their &ldquo;normal&rdquo; states.  If you have
+  tweaked your piano to your preferred &ldquo;normal&rdquo;, you may
+  need to change the values in this Registration to match your
+  changes.</P>
+
+  <LI><P>The Electric Piano Tone 1, &ldquo;1976SuitCase&rdquo; is a nice Rhodes®
+  sound, but the stereo ping-pong tremolo makes me nauseous,
+  especially through headphones.  You can set
+  <B><a href="edit_help.html#modulationSpeed">modulationSpeed</a></B>
+  to 0 to disable the tremolo entirely, or set it to something like 80
+  to give a shimmering sound.</P>
+
+  <LI><P>Some of the electronic Organ Tones, such as &ldquo;Combo Jz.Org&rdquo;
+  sound an octave lower than other Tones. You can certainly move your
+  hands up the keyboard, but you could also make a Dual using the
+  Tone, and use 
+  <B><a href="edit_help.html#dualTone1OctaveShift">dualTone1OctaveShift</a></B>
+  to transpose the Tone up an octave.  Set 
+  <B><a href="edit_help.html#lowerVolume">lowerVolume</a></B>
+  to 0, so that the second Tone of the Dual won't be heard.  (And yes,
+  I know that Hammond® organs have a 16' drawbar, which may account for
+  the lower perceived pitch.  These Tones sound muddy to me when
+  played unshifted, so I prefer the octave shift.)</P>
+
+  <LI><P>On the other hand, I sometimes find that I want the left Tone of a
+  split to play pitches above the normal
+  <B><a href="edit_help.html#splitPoint">splitPoint</a></B>,
+  or the right Tone to play pitches below the normal
+  <B><a href="edit_help.html#splitPoint">splitPoint</a></B>.
+  You can accomplish this by using the octave shifts to move the left
+  Tone down an octave, or the right Tone up an octave, and adjust the
+  <B><a href="edit_help.html#splitPoint">splitPoint</a></B> (and your hands)
+  to give yourself some more elbow room.</P>
+
+  <LI><P>One of the chief joys of a Leslie® or Rotary speaker is how the sound
+  changes as the speaker spins up.  So whenever I make a Registration that
+  uses one of the orgran sounds that supports the rotary effect, I set the
+  <B><a href="edit_help.html#leftPedalFunc">leftPedalFunc</a></B> or
+  <B><a href="edit_help.html#centerPedalFunc">centerPedalFunc</a></B>
+  to "Rotary on/off," so I can use the pedal to toggle the effect.</P>
+
+  <LI><P>I have experimented with recording MIDI from the piano, and
+  importing the MIDI file into MuseScore to edit into musical
+  notation.  Since the left and right Tones of a split are sent on
+  different MIDI channels, another use of the split-and-shift-octave
+  is to allow the MIDI file to keep your hands on different channels,
+  so you can assign them to different staves in MuseScore.</P>
+
+  <LI><P>&ldquo;Harpiness&rdquo; (Strings, 8) is a nice sound, but the half-second echo effect gets
+  old after about two trips across the canyon, and it isn't affected
+  by <B><a href="edit_help.html#modulationSpeed">modulationSpeed</a></B>
+  or any other control that I have found.  The base sound is pretty
+  much identical to the GM2 Harp (Other, 124), and using a
+  Registration makes it a lot easier to access than 124 presses of
+  &ldquo;+&rdquo;.  There are a number of other Tones with obnoxious
+  echo, but they don't seem to have exact non-echo equivalents.</P>
+
+  <LI><P>I have a quiet house and usually play at pretty low volume.  Doing
+  this using piano defaults mean that I need to keep the volume faders
+  near the bottom of their ranges, where they can be hard to adjust
+  precisely.  By creating Registrations with <B>upperVolume</B>
+  and <B><a href="edit_help.html#lowerVolume">lowerVolume</a></B>
+  set to 50 or 80%, I can run the main volume fader higher, using more
+  of its range for easier adjustment.</P>
+
+  <LI><P>Since the Organ Tones don't respond to keyboard dynamics, they often sound
+  too loud when I switch between piano and organ Tones, necessitating
+  a quick trip to the volume fader.  Using a Registration allows
+  <B><a href="edit_help.html#upperVolume">upperVolume</a></B> and
+  <B><a href="edit_help.html#lowerVolume">lowerVolume</a></B>
+  for the organ sounds to be set lower than the piano sounds.  For
+  example, I might set the 
+  <B><a href="edit_help.html#upperVolume">upperVolume</a></B>
+  of piano Registrations to 80%, and
+  <B><a href="edit_help.html#upperVolume">upperVolume</a></B> of the organ Registrations to 50%.</P>
+
+  <LI><P>you assign the &ldquo;Layer&rdquo; function to an analog center or
+  left pedal, the pedal can be used to fade in Layer 2 of a dual. 
+  You could use this to bring in string schmaltz on a piano voice.  Or
+  you could use the same Tone for both halves of the dual, but set
+  <B><a href="edit_help.html#dualOctaveShift">dualOctaveShift</a></B> up an octave.
+  As you depress the pedal, the sound will become
+  louder and brighter as the octave comes in.</P>
+</OL>
+
+
+<H2 id="midiTips">MIDI Tips</H2>
+<P>Some of the information in this section is in Roland's
+MIDI guide, and some was determined experimentally.  Please inform me of
+any errors or additions.</P>
+
+<UL>
+  <LI><P>
+  The piano is multi-timbral:  you can send it MIDI commands on any of
+  the 16 channels, and it will respond.  Each channel can have
+  different Tones, parameters etc.</P>
+
+  <LI><P>The receive
+  channel associated with the piano keyboard is <I>four</I>,
+  rather than the channel <I>one</I> that you might expect.  So to use
+  a computer or other MIDI device to change programs or adjust
+  parameters that affect the sound produced when you play the
+  keyboard, you need to send to the piano on channel 4. This is
+  independent of the &ldquo;MIDI Transmit Channel&rdquo; that you edit
+  using Function 31: that affects only the channel on
+  which the keyboard <I>sends</I> note and parameter data.</P>
+
+  <LI><P>The value of <B><a href="edit_help.html#midiTxCh">midiTxCh</a></B> affects only messages
+  <I>sent by </I>the piano: all notes in Single mode, Right Tone in Split mode,
+  and Tone 1 in dual mode.</P>
+
+  <LI><P CLASS="western" STYLE="margin-bottom: 0in; font-style: normal">
+  The piano sends on channels 3
+  for Split Left, and on channel 6 for Dual Tone 2.  There doesn't
+  seem to be any way to change these.</P>
+
+  <LI><P CLASS="western" STYLE="margin-bottom: 0in; font-style: normal">
+  Registration change sends MIDI messages on three channels even if the piano
+  is not in split or dual mode:</P>
+     <UL>
+       <LI><P><B><a href="edit_help.html#midiTxCh">midiTxCh</a></B> is the main/right Tone</P>
+       <LI><P>channel 3 is split Left Tone</P>
+       <LI><P>channel 6 is dual Tone 2</P>
+     </UL>
+
+  <LI><P CLASS="western" STYLE="margin-bottom: 0in; font-style: normal">
+  If you send CC, PC, or other
+  messages to the piano on channel 4, they affect the sound produced
+  when you play the piano's keys.  But if you send these messages on
+  channel 3 or 6, they <I>do not</I> affect the sounds produced by the
+  piano keys in Split or Dual mode.  And note messages received on
+  channel 4 do not cause the split Left or dual Tone 2 to sound: only
+  the tone selected for channel 4.  You can send note messages on
+  channels 3 and 6, and they <I>are</I> affected by CC etc. sent on
+  these channels.  But received MIDI seems to have no effect on  split
+  Left or dual Tone 2.</P>
+
+  <LI><P CLASS="western" STYLE="margin-bottom: 0in; font-style: normal">
+  If you send MIDI note messages
+  on channels other than 4, the volume is controlled by the &ldquo;Song
+  Volume&rdquo; fader.  My &ldquo;sound guy&rdquo; reflex is to turn
+  down faders for sources that I am not using, so this undocumented
+  use of &ldquo;Song Volume&rdquo; had me confused for a while.</P>
+
+  <LI><P CLASS="western" STYLE="margin-bottom: 0in; font-style: normal">
+  Channel 10 (traditionally used
+  for rhythm) is limited to GM2 sounds &ndash; you can't select the
+  main piano Tones etc.  The other channels can select any sound bank
+  and program.</P>
+
+  <LI><P> Adjusting Ambience sends CC 91 (Effect 1 Depth) on channels 
+  <B><a href="edit_help.html#midiTxCh">midiTxCh</a></B>, 3, and 6.  But sending CC 91 messages to the keyboard does 
+  <I>not</I> change the Ambience of channel 4.  CC 91 <I>does</I>
+  affect reverb on other channels, at least for some Tones, but the reverb effect is not the
+  same as the Ambience effect applied to the same Tones on channel 4.</P>
+
+  <LI><P>On most of the electric organ Tones, pressing the &ldquo;Organ&rdquo;
+  button again toggles the rotary speaker effect on and off.  
+  It also sends MIDI CC12 (Effect Controller 1) to either 0 (off) or 127 (on).
+  You can't do this with the button when you are
+  using a Registration, but you can set <B><a href="edit_help.html#rotarySpeed">rotarySpeed</a></B>
+  on or off in the Registration, and the rotary toggle can be assigned
+  to left or center pedal using the <B><a href="edit_help.html#centerPedalFunc">centerPedalFunc</a></B>
+  or <B><a href="edit_help.html#leftPedalFunc">leftPedalFunc</a></B> settings.</P>
+
+  <LI><P>You can send CC12 to the piano to change the effects listed above for
+  the Registration item <B><a href="edit_help.html#modulationSpeed">modulationSpeed</a></B>,
+  or in some cases <B><a href="edit_help.html#rotarySpeed">rotarySpeed</a>.</B>
+  However, when the piano receives CC12 on any channel, it affects
+  CC12 on <I>all</I> channels.  This seems like a bug, or at least undesirable.</P>
+</UL>
+
+<P>Note: it may be that some of the above limitations and peculiarities can be
+avoided by using undocumented SysEx or NRPM control messages.  My
+experiments have been largely limited to items specified in the
+document &ldquo;FP-90 / FP-60 MIDI Implementation&rdquo;, 
+<a href="https://www.roland.com/global/support/by_product/fp-90/owners_manuals/" target="_blank">
+available on the Roland website.</a>, and a bit of experimentation.</P>
+
+<P>Here is a table showing the effects of sending MIDI Controller messages to
+the piano.  There are a lot of Tones in this piano, and a lot of
+options, so I am not able to guarantee complete accuracy.  Please
+inform me of any errors.</P>
+
+<TABLE WIDTH=100% BORDER=1 BORDERCOLOR="#000000" CELLPADDING=4 CELLSPACING=0>
+  <COL WIDTH=48*>
+  <COL WIDTH=208*>
+  <THEAD>
+    <TR VALIGN=TOP>
+      <TH WIDTH=19%>
+              <P>MIDI CC</P>
+      </TH>
+      <TH WIDTH=81%>
+              <P>Effect When Sent to Piano</P>
+      </TH>
+    </TR>
+  </THEAD>
+  <TBODY>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>0 Bank (MSB)</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>Together with CC32, select Tone bank</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>1 Modulation</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>No effect on Piano 1-4.  Vibrato on most other
+                          Tones.  Note that the Registration setting "modulationSpeed" is <i>not</i>
+                          related to this CC.</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>5 Portamento Time</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>No effect on Piano 1-4.  Portamento time on at
+                          least some other Tones.</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>7 Volume</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>Controls volume on all Tones</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>10 Pan</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>Left/right pan on some GM Tones, some E.Piano
+                          Tones</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>11 Expression</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>Controls volume on all Tones</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>12 Effect</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>Tremolo/chorus/wah level (0-127) on some
+                          E.Piano and a few Pad Tones.  Equivalent to the Registration
+                          setting <B><a href="edit_help.html#modulationSpeed">modulationSpeed</a></B>
+                          for these Tones.</P>
+                          <P>Rotary speaker on (127) or off (0) on some
+                          Organ Tones.  Equivalent to the Registration setting
+                          <B><a href="edit_help.html#rotarySpeed">rotarySpeed</a></B>
+                          for these Tones.</P>
+                          <P CLASS="western" STYLE="font-weight: normal">No effect on GM
+                          pianos or organs.</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>32 Bank LSB</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>Together with CC0, select Tone bank</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>65 Portamento</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>No effect on Piano 1-4.  Portamento on (127)
+                          or off (0) on at least some other Tones.</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>71 Resonance</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>No effect on Piano 1-4.  Low-pass filter
+                          resonance on at least some other Tones.</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>72 Release Time</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>No effect on Piano 1-4.  Envelope release on
+                          at least some other Tones.</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>73 Attack Time</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>No effect on Piano 1-4.  Envelope attach on at
+                          least some other Tones.</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>74 Cutoff</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>No effect on Piano 1-4.  Low-pass filter
+                          cutoff frequency on at least some other Tones.</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>76 Vibrato Rate</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>Sets vibrato rate</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>77 Vibrato Depth</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>Sets the maximum vibrato depth</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>78 Vibrato Delay</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>Sets delay before vibrato starts</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>91 Reverb</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>May affect reverb on some Tones, but <I>not</I>
+                          the same as Ambience.  May only work on MIDI channels other than
+                          four.</P>
+                  </TD>
+          </TR>
+          <TR VALIGN=TOP>
+                  <TD WIDTH=19%>
+                          <P>93 Chorus</P>
+                  </TD>
+                  <TD WIDTH=81%>
+                          <P>Controls chorus level on some Tones.  See also
+                          CC12, Effect, for some Tones.</P>
+                  </TD>
+          </TR>
+  </TBODY>
+</TABLE>
+
+<H2 id="spelunking">MIDI Spelunking</H2>
+<p>Roland's MIDI Implementation document is pretty minimal, so I wrote a Python
+program to poke at the piano and find out more.  This program is the source of
+much of the detail in the previous section regarding the use of MIDI "CC" controls.</p>
+
+<p>But clearly the pianos have a lot more MIDI capability: everything that
+Roland's "Piano Partner" app does to the piano is done via MIDI, apparently
+using System Exclusive (SysEx) messages. I don't have a way to eavesdrop on
+either a BlueTooth or USB connection between Piano Partner and the piano, so I
+extended my Python program to do some spelunking.<p>
+
+<p>My program is available <a href="spelunky.py">here.</a>
+
+<p>The program is written in Python 2.7, which is the version on the ancient
+Linux laptop that I used for the investigations, and the version with which I am
+most familiar. Updates to current versions of Python, or to a more elegant user
+interface, are left as an exercise for the reader.</p>
+
+<H2 id="hardwareNotes">Hardware Notes</H2>
+
+<P>The microphone jack is
+TRS.  Since the piano's microphone jack has a ring contact, it should
+also work with a microphone that has a TS cable, with the &ldquo;ring&rdquo;
+side of the piano's differential input connecting to the microphone's
+ground sleeve.</P>
+
+<P>The TRS pedal jacks
+have about 3.2 volts on the ring contact relative to the ground
+sleeve.  The Roland analog pedals present about 10 K-ohms between ring
+and sleeve, and have the pot wiper connected to tip.  When ring and
+sleeve are shorted, as by the TS plug on a simple foot-switch (or a
+DP-10 in &ldquo;switch&rdquo; mode), the piano limits current to a
+safe value of about 0.7 mA.</P>
+
+<DIV TYPE=FOOTER>
+  <P ALIGN=CENTER STYLE="margin-top: 0.35in; margin-bottom: 0in">
+  Updated 21 June 2020.  Copyright © 2020 by John Hartman, The Old Bald Geek.
+  </P>
+</DIV>
+
+</body></html>

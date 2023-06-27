@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>Old Bald Geek's Roland FP-60/FP-90 Registration Editor Version</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="Keywords" content="Roland,FP-60,FP-90,Registration">
+<meta name="Description" content="Simple editor for Roland FP-60 and FP-90 custom Registration (.UPG) files.">
+<meta name="robots" content="index, follow">
+
+<style>
+.notetext {
+   vertical-align: text-top;
+   box-sizing: border-box;
+}
+
+table.scrolldown {
+   font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+   border: 1px solid #ddd;
+   border-collapse: collapse;
+   width: 100%;
+}
+
+table.scrolldown td, table.scrolldown th {
+   border: 1px solid #ddd;
+   padding-left: 8px;
+   white-space: nowrap;
+}
+
+table.scrolldown tr:nth-child(even) {
+   background-color: #f2f2f2;
+}
+
+table.scrolldown thead th {
+   padding-top: 8px;
+   padding-bottom: 8px;
+   text-align: left;
+   background-color: #4CAF50;
+   color: white;
+}
+
+table.scrolldown.selected {
+   color: red;
+}
+
+.tablebuttons {
+   vertical-align: top;
+   width: 20%;
+}
+
+.tablecontent {
+   width: 80%;
+}
+
+.tablebutton {
+   width: 100%;
+   margin-bottom: 5px;
+   margin-right: 50px;
+}
+
+</style>
+</head>
+
+<body onload="onLoad();">
+<script src="Roland_FP90_tones.js"></script>
+<script src="edit_reg.js"></script>
+
+<script>
+
+// Copied row as JSON, or '' if none copied
+var g_copiedRow = '';
+
+// Relative URL to the editing page
+var g_editRegPage = 'edit_reg.html';
+
+//-----------------------------------------------------------------------------
+// Initialization
+function onLoad()
+{
+   // Create maps of the Tone list indexed by Name and Bank
+   g_toneList = new ToneList( g_Roland_FP90_tones );
+   g_changeFlag = new ChangeFlag( 'changed' );
+
+   // If there is data in sessionStorage, load and use it.
+   if (sessionStorage.getItem( 'fp_regVersion' ) == g_sessionDataCookie ) {
+      // Same version.  COULD do more sanity checks here
+
+      // Parse the data, fill screen controls
+      ParseFile( sessionStorage.getItem( 'fp_regFile' ),
+                 sessionStorage.getItem( 'fp_regData' ),
+                 false );
+
+      g_selectedRow = sessionStorage.getItem( 'fp_regNumber' ) - 1;
+      if (g_selectedRow >= 0) {
+         SelectRow( g_selectedRow );
+
+         // Scroll to the edit controls.
+         // We tried scrollInforView on the ROW, but that puts the ROW
+         // on the left margin, hiding the edit buttons.
+         document.getElementById('filename').scrollIntoView();
+      }
+
+      g_copiedRow = sessionStorage.getItem( 'fp_copiedRow' );
+
+      // If edit changed the data, set change indicator
+      let changed = sessionStorage.getItem( 'fp_changed' );
+      if (changed == 'true') {
+         g_changeFlag.Set();
+      }
+   }
+   else {
+      // No saved data: read the sample file
+      readFromServer('FP60_90_IDEAS.UPG');
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Fill and display the Registration list
+function FillRegistrationList()
+{
+   var table = document.getElementById( 'registrations' );
+
+   // Scrub the old list, leaving the header row
+   let nRows = table.rows.length;
+   for (let ix = 1; ix < nRows; ix++) {
+      table.deleteRow(1);
+   }
+
+   // Fill the list
+   for (let ix = 0; ix < g_upg.registration.length; ix++) {
+      let reg = g_upg.registration[ix];
+
+      let row = table.insertRow();
+      row.addEventListener( 'click',    onClickRow );
+      row.addEventListener( 'dblclick', onDoubleClickRow );
+
+      let cell = row.insertCell();
+      let text = document.createTextNode( RegIndexAsLocation(ix) );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( GetSafeRegProperty( reg, 'name' ) );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode(
+               g_toneList.NameForIndex( GetSafeRegProperty( reg, 'singleTone' ) ) );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode(
+               g_toneList.NameForIndex( GetSafeRegProperty( reg, 'splitLowerTone' ) ) );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode(
+               g_toneList.NameForIndex( GetSafeRegProperty( reg, 'dualTone2' ) ) );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      let modes = ['Single', 'Split', 'Dual'];
+      text = document.createTextNode(  modes[ GetSafeRegProperty( reg, 'keyboardMode' ) ] );
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode( GetSafeRegProperty( reg, 'comment' ) );
+      cell.appendChild(text);
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Populate the editor from the file data
+function ParseFile( a_filename, a_text, a_initialEdit = true )
+{
+   // Parse the file
+   try {
+      g_upg = JSON.parse( a_text );
+
+      // Fill the page controls
+      g_filename = a_filename;
+      let control = document.getElementById('filename');
+      control.innerHTML = 'Editing ' + g_filename;
+
+      control = document.getElementById('comment');
+      SetControlValue( control, GetSafeRegProperty( g_upg, 'comment' ) );
+
+      control = document.getElementById('registrationPedalShift');
+      SetControlValue( control, GetSafeRegProperty( g_upg, 'registrationPedalShift' ) );
+
+      FillRegistrationList();
+   }
+   catch(e) {
+      alert( '"' + a_filename + '" is not a valid Roland Registration file.\n'
+             + e.toString() );
+   }
+
+   if (a_initialEdit) {
+      // Nothing selected, nothing changed
+      g_changeFlag.Clear();
+      sessionStorage.setItem( 'fp_changed', false );
+      g_selectedRow = -1;
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Invoked by the "Browse..." file button, or from doUpload
+function uploadFile( a_files )
+{
+   const selectedFile = a_files[0];
+   const reader = new FileReader();
+   reader.onload = function(evt) {
+      ParseFile( selectedFile.name, evt.target.result );
+   };
+   reader.readAsText(selectedFile);
+}
+
+//-----------------------------------------------------------------------------
+// Button wraps the ugly (and now hidden) file-selection control
+function doUpload()
+{
+   if (WarnUnsavedChanges()) {
+      fileElem = document.getElementById('input');
+      if (fileElem) {
+         fileElem.click();
+      }
+   }
+}
+
+//-----------------------------------------------------------------------------
+// If there are unsaved changes, present a warning message.
+// Return true if user wants to continue, else false to cancel
+function WarnUnsavedChanges()
+{
+   if (g_changeFlag.Changed()) {
+      if (!window.confirm( 'You have unsaved changes.\n'
+                         + 'Press OK to discard them, or Cancel to remain on this page.' )) {
+         // User pressed CANCEL: stay here
+         return false;
+      }
+   }
+   return true;
+}
+
+//-----------------------------------------------------------------------------
+// Read the specified file from the server and edit it
+function readFromServer( a_fileUrl )
+{
+   if (WarnUnsavedChanges()) {
+      let request = new XMLHttpRequest();
+      request.open( 'GET', a_fileUrl + '?' + (new Date()).getTime() );
+      request.responseType = 'text';
+      request.onload = function() {
+         ParseFile( a_fileUrl, request.response );
+      };
+      request.send();
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Invoked by clicking on the Download button
+function downloadFile()
+{
+   // Default filename is based on the input file without extension.
+   // TODO: might add a "version" item to the header of the file.
+   // Increment it (if the file has changed) and append to the output filename.
+   // Or just increment the filename...
+   if (g_filename) {
+      let filename = g_filename;
+      let ix = filename.lastIndexOf('.');
+      if (ix > 0) {
+         filename = filename.substring( 0, ix );
+      }
+      filename += '_edited.UPG'
+
+      let text = JSON.stringify( g_upg, null, 4 );
+      let blob = new Blob( [text], {type: 'text/plain'} );
+      let elem = window.document.createElement('a');
+      elem.href = window.URL.createObjectURL(blob);
+      elem.download = filename;
+      document.body.appendChild(elem);
+      elem.click();
+      document.body.removeChild(elem);
+      elem.href = window.URL.revokeObjectURL(blob);
+
+      g_changeFlag.Clear();
+      sessionStorage.setItem( 'fp_changed', false );
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Select the row corresponding to a_regIndex
+function SelectRow( a_regIndex )
+{
+   const table = document.getElementById('registrations');
+   let rows = table.getElementsByTagName('tr');
+
+   // Remove any previous selection
+   for (var row = 0; row < rows.length; row++) {
+      rows[row].style.backgroundColor = "";
+      rows[row].classList.remove('selected');
+   }
+
+   // Our header counts as a row, so add 1 to index
+   rows[a_regIndex + 1].style.backgroundColor = '#80FFFF';
+   rows[a_regIndex + 1].className += " selected";
+
+   g_selectedRow = a_regIndex;
+}
+
+//-----------------------------------------------------------------------------
+// Clicked on a row: select it
+function onClickRow( a_event )
+{
+   // Our header counts as a row, so rowIndex is 1-based. Save 0-based for object
+   SelectRow( a_event.currentTarget.rowIndex - 1 );
+}
+
+//-----------------------------------------------------------------------------
+// Couble-clicked on a row: edit it
+function onDoubleClickRow( a_event )
+{
+   onEditRow();
+}
+
+//-----------------------------------------------------------------------------
+// Move the selected row up
+function onMoveRowUp()
+{
+   if (g_selectedRow >= 0)
+   {
+      let destRow = g_selectedRow - 1;
+      if (destRow < 0)
+         destRow = g_upg.registration.length - 1;
+
+      let selected = g_upg.registration[ g_selectedRow ];
+      let saved = g_upg.registration[ destRow ];
+
+      g_upg.registration[ destRow ] = selected;
+      g_upg.registration[ g_selectedRow ] = saved;
+      g_selectedRow = destRow;
+
+      // Redraw
+      FillRegistrationList();
+      SelectRow( g_selectedRow )
+      g_changeFlag.Set();
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Move the selected row down
+function onMoveRowDown()
+{
+   if (g_selectedRow >= 0)
+   {
+      let destRow = g_selectedRow + 1;
+      if (destRow >= g_upg.registration.length)
+         destRow = 0;
+
+      let selected = g_upg.registration[ g_selectedRow ];
+      let saved = g_upg.registration[ destRow ];
+
+      g_upg.registration[ destRow ] = selected;
+      g_upg.registration[ g_selectedRow ] = saved;
+      g_selectedRow = destRow;
+
+      // Redraw
+      FillRegistrationList();
+      SelectRow( g_selectedRow )
+      g_changeFlag.Set();
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Copy the selected row
+function onCopyRow()
+{
+   if (g_selectedRow >= 0)
+   {
+      g_copiedRow = JSON.stringify( g_upg.registration[ g_selectedRow ] );
+
+      // Show the title of the copied row near the Paste button
+      const clipBoard = document.getElementById('clipBoard');
+      clipBoard.innerHTML = g_upg.registration[ g_selectedRow ].name;
+
+      // Persist the data, so COPY can be used between files.
+      sessionStorage.setItem( 'fp_copiedRow', g_copiedRow );
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Paste over the selected row
+function onPasteRow()
+{
+   if ((g_selectedRow >= 0) && g_copiedRow)
+   {
+      try {
+         g_upg.registration[ g_selectedRow ] = JSON.parse( g_copiedRow );
+      }
+      catch(e) {
+         // Can't paste.  Delete the bad clipboard data
+         g_copiedRow = '';
+         sessionStorage.setItem( 'fp_copiedRow', g_copiedRow );
+      }
+
+      // Redraw
+      FillRegistrationList();
+      SelectRow( g_selectedRow )
+      g_changeFlag.Set();
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Edit the selected row
+function UpdateStorage()
+{
+   // Save the row to be edited in sessionStorage for the edit page
+   sessionStorage.setItem( 'fp_regVersion',g_sessionDataCookie );
+   sessionStorage.setItem( 'fp_regFile',   g_filename );
+   sessionStorage.setItem( 'fp_regNumber', g_selectedRow + 1 );
+   sessionStorage.setItem( 'fp_regData',   JSON.stringify( g_upg ) );
+   sessionStorage.setItem( 'fp_changed',   g_changeFlag.Changed() );
+}
+
+//-----------------------------------------------------------------------------
+// Edit the selected row
+function onEditRow()
+{
+   if (g_selectedRow >= 0)
+   {
+      // Save the data to be edited in sessionStorage for the edit page, or
+      // for refresh of this page
+      UpdateStorage();
+
+      // Navigate to the editor page
+      window.location.assign( g_editRegPage );
+      // Return from the editor page will cauyse reload
+   }
+}
+
+//-----------------------------------------------------------------------------
+// About
+function onAbout()
+{
+   let email = 'junk@junkdebugger';
+   alert( 'Copyright (c) 2020 by John Hartman, aka OldBaldGeek.\n' +
+          'Contact me at ' + email.replace( /junk/g, 'noice' ) + '.com' );
+}
+
+//-----------------------------------------------------------------------------
+// Callback when the Notes control changes
+function onChangedNote( a_event )
+{
+   g_changeFlag.Set();
+
+   // Save the data to be edited in sessionStorage for the edit page, or
+   // for refresh of this page
+   let control = document.getElementById('comment');
+   let value = GetControlValue( control );
+   SetSafeRegProperty( g_upg, 'comment', value );
+   UpdateStorage();
+}
+
+//-----------------------------------------------------------------------------
+// Callback when the Pedal Changes Registration changes
+function onPedalChanges( a_event )
+{
+   g_changeFlag.Set();
+
+   // Save the data to be edited in sessionStorage for the edit page, or
+   // for refresh of this page
+   let control = document.getElementById('registrationPedalShift');
+   let value = GetControlValue( control );
+   SetSafeRegProperty( g_upg, 'registrationPedalShift', value );
+   UpdateStorage();
+}
+
+</script>
+
+<a href="index.html">
+<IMG src="KittyRegSet.png" alt="Old Bald Geek's Roland Piano Information"  width=180 height=116>
+</a>
+
+<h1>Old Bald Geek's Roland FP-60/FP-90 Registration Editor Version 2.0</h1>
+
+<p>This simple editor allows you to edit custom Registration files from and
+for the Roland FP-60 and FP-90 digital pianos. To use the editor:</p>
+<ul>
+<li>Specify a UPG file to edit using one of the buttons below.
+<li>Select a row in the list of Registrations.
+<li>Use "Edit Row" (or double-click the row) to make changes to the selected Registration.
+For explanations of an item, click the "?" nearest the item or its group.
+<li>Use the buttons on this page to change the order of the Registrations, or to
+make a copy of a Registration for further editing.
+The "Location" column shows where the Registration will appear for selection
+on the piano. For example, to select a Registration with locaion "E.Piano 2",
+press the piano's "Registration" button, press "E.Piano", and press "+".
+<li>When you are done, use "Download edited file" to save the result to a file
+on your computer.
+<li>Copy the saved file onto a USB Flash drive, and import it to the piano
+by using Function 25, “Reg. Set Import.” Note that the piano uses old-school
+DOS-style filenames: eight or fewer characters, a dot, and a UPG extension.
+</ul>
+
+<fieldset><legend>Specify a UPG file to edit</legend>
+   <input type="button" class="tablebutton" value="Roland Defaults, as exported from a new piano (DEF_REGS.UPG)" onclick="readFromServer('FP60_90_FACTORY_REGS.UPG');">
+   <input type="button" class="tablebutton" value="Some examples of things you can do with Registrations (IDEAS.UPG)" onclick="readFromServer('FP60_90_IDEAS.UPG');">
+   <input type="file"   style="display:none" id="input" onchange="uploadFile(this.files);">
+   <input type="button" class="tablebutton" value="Upload your own file, which you can export from your piano using Function 24, 'Reg. Set Export'"
+    onclick="doUpload();">
+</fieldset>
+
+<fieldset><legend id="filename">Editing</legend>
+   <label>Notes <textarea id="comment" class="notetext" maxlength="640" cols="80" wrap="soft" onchange="onChangedNote();"></textarea></label>
+   <input type="button" value="?" onclick="onHelp('comment');">
+
+   <br><label>Pedal changes Registration
+      <select id="registrationPedalShift" onchange="onPedalChanges();">
+         <option>No</option>
+         <option>Left</option>
+         <option>Center</option>
+       </select></label>
+       <input type="button" value="?" onclick="onHelp('registrationPedalShift');">
+
+<fieldset><legend>Registrations</legend>
+<table><tr>
+   <td class="tablebuttons">
+      <input type="button" class="tablebutton" value="Edit Row" onclick="onEditRow();">
+      <input type="button" class="tablebutton" value="Move Row Up" onclick="onMoveRowUp();">
+      <input type="button" class="tablebutton" value="Move Row Down" onclick="onMoveRowDown();">
+      <input type="button" class="tablebutton" value="Copy Row" onclick="onCopyRow();">
+      <input type="button" class="tablebutton" value="Paste to Row" onclick="onPasteRow();">
+      <fieldset><legend>Copied Row</legend>
+      <div id="clipBoard"></div>
+      </fieldset>
+      <input type="button" class="tablebutton" value="Download edited file" id='changed' onclick="downloadFile();">
+      <input type="button" class="tablebutton" value="About" onclick="onAbout();">
+   </td>
+   <td class="tablecontent overflow-x:auto; overflow-y:auto">
+      <table class="scrolldown" id='registrations'>
+          <thead>
+            <tr id="registrationHeaderRow">
+                <th>Location</th>
+                <th>Name</th>
+                <th>Main Tone</th>
+                <th>Left Tone</th>
+                <th>Dual Tone</th>
+                <th>Mode</th>
+                <th>Notes</th>
+            </tr>
+         </thead>
+
+         <tbody id="registrationBody">
+         <!-- Rows filled by Javascript -->
+         </tbody>
+       </table>
+   </td>
+</tr></table>
+</fieldset>
+</fieldset>
+
+<DIV TYPE=FOOTER>
+  <P ALIGN=CENTER STYLE="margin-top: 0.35in; margin-bottom: 0in">
+  Updated 28 February 2020.  Copyright © 2020 by John Hartman, The Old Bald Geek.
+  </P>
+</DIV>
+
+</body></html>
