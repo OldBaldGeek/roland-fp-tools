@@ -4,8 +4,8 @@
 <title>Roland FP-60/FP-90 Annotated Tone List</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="Keywords" content="Roland,FP-60,FP-90,Registration,Tones">
-<meta name="Description" content="Tone information for Roland FP-60 and FP-90 pianos.">
+<meta name="Keywords" content="Roland,FP-60,FP-90,FP-60X,FP-90X,Registration,Tones">
+<meta name="Description" content="Tone information for Roland FP-60, FP-90, FP-60X, and FP-90X pianos.">
 <meta name="robots" content="index, follow">
 
 <style>
@@ -56,7 +56,6 @@ table.scrolldown.selected {
 </head>
 
 <body onload="onLoad();">
-<script src="Roland_FP90_tones.js"></script>
 <script src="edit_reg.js"></script>
 
 <script>
@@ -65,56 +64,79 @@ table.scrolldown.selected {
 // Initialization
 function onLoad()
 {
-   // Create maps of the Tone list indexed by Name and Bank
-   g_toneList = new ToneList( g_Roland_FP90_tones );
+    // See if a previous page has set the piano type
+    let pianoType = sessionStorage.getItem( 'fp_pianoType' );
+    if (pianoType != null) {
+        console.log('Session storage specifies ' + pianoType);
+        let sel = document.getElementById('pianoType');
+        sel.value = pianoType;
+    }
 
-   // Fill the list
-   var table = document.getElementById( 'tones' );
+    do_select_piano();
+}
 
-   for (var ix=0; ix < g_toneList.toneArray.length; ix++) {
-      let row = table.insertRow();
-      let tone = g_toneList.toneArray[ix];
+//-----------------------------------------------------------------------------
+// User selection of piano type
+function do_select_piano()
+{
+    var sel = document.getElementById('pianoType');
+    SelectPiano(sel.value);
 
-      cell = row.insertCell();
-      text = document.createTextNode( tone.Name );
-      cell.appendChild(text);
+    MakeToneList( g_pianoInfo.tone_list_name, function() {
+        // Fill the list
+        var table = document.getElementById( 'tones' );
 
-      cell = row.insertCell();
-      text = document.createTextNode( tone.Location );
-      cell.appendChild(text);
+        // Scrub the old list, leaving the header row
+        let nRows = table.rows.length;
+        for (let ix = 1; ix < nRows; ix++) {
+            table.deleteRow(1);
+        }
 
-      cell = row.insertCell();
-      text = document.createTextNode( tone.Category );
-      cell.appendChild(text);
+        for (ix=0; ix < g_toneList.toneArray.length; ix++) {
+            let row = table.insertRow();
+            let tone = g_toneList.toneArray[ix];
 
-      cell = row.insertCell();
-      text = document.createTextNode( tone.modulationSpeed );
-      cell.appendChild(text);
+            cell = row.insertCell();
+            text = document.createTextNode( tone.Name );
+            cell.appendChild(text);
 
-      cell = row.insertCell();
-      text = document.createTextNode( tone.modulation_effect );
-      cell.appendChild(text);
+            cell = row.insertCell();
+            text = document.createTextNode( tone.Location );
+            cell.appendChild(text);
 
-      cell = row.insertCell();
-      text = document.createTextNode( tone.rotarySpeed );
-      cell.appendChild(text);
+            cell = row.insertCell();
+            text = document.createTextNode( tone.Category );
+            cell.appendChild(text);
 
-      cell = row.insertCell();
-      text = document.createTextNode( tone.Notes );
-      cell.appendChild(text);
+            cell = row.insertCell();
+            text = document.createTextNode( tone.modulationSpeed );
+            cell.appendChild(text);
 
-      cell = row.insertCell();
-      text = document.createTextNode( tone.MSB );
-      cell.appendChild(text);
+            cell = row.insertCell();
+            text = document.createTextNode( tone.modulation_effect );
+            cell.appendChild(text);
 
-      cell = row.insertCell();
-      text = document.createTextNode( tone.LSB );
-      cell.appendChild(text);
+            cell = row.insertCell();
+            text = document.createTextNode( tone.rotarySpeed );
+            cell.appendChild(text);
 
-      cell = row.insertCell();
-      text = document.createTextNode( tone.PC );
-      cell.appendChild(text);
-   }
+            cell = row.insertCell();
+            text = document.createTextNode( tone.Notes );
+            cell.appendChild(text);
+
+            cell = row.insertCell();
+            text = document.createTextNode( tone.MSB );
+            cell.appendChild(text);
+
+            cell = row.insertCell();
+            text = document.createTextNode( tone.LSB );
+            cell.appendChild(text);
+
+            cell = row.insertCell();
+            text = document.createTextNode( tone.PC );
+            cell.appendChild(text);
+        }
+    });
 }
 
 </script>
@@ -123,13 +145,13 @@ function onLoad()
 <IMG src="KittyRegSet.png" alt="Old Bald Geek's Roland Piano Information"  width=180 height=116 border=0>
 </a>
 
-<h1>Roland FP-60/FP-90 Tones</h1>
+<h1>Roland FP-60/FP-90/FP-60X/FP-90X Tones</h1>
 
-<p>This page shows the Tones available on the Roland FP-60 and FP-90 digital pianos.
+<p>This page shows the Tones available on the Roland FP-60, FP-90, FP-60X, and FP-90X digital pianos.
 <ul>
 <li>"Name" is the Tone name as shown on the piano
 <li>"Location" is the location of the Tone: button, then index
-<li>"Category" is an attempt to group Tones as piano, bass, reed, etc.
+<li>"Category" is my attempt to group Tones as piano, bass, reed, etc.
 <li>"Modulation Amount" is the default amount of modulation for the Tone.  An
 empty cell means there is no modulation effect for the Tone
 <li>"Modulation Effect" tells what the modulation does
@@ -137,6 +159,15 @@ empty cell means there is no modulation effect for the Tone
 <li>"Notes" contain general comments on the Tone
 <li>"MIDI..." shows the MIDI Bank and Program number for the Tone
 </ul>
+
+<fieldset><legend>Specify the type of piano</legend>
+   <select id="pianoType" onchange="do_select_piano()">
+      <option>FP-60</option>
+      <option selected>FP-90</option>
+      <option>FP-60X</option>
+      <option>FP-90X</option>
+   </select></label>
+</fieldset>
 
 <fieldset><legend>Tones</legend>
    <table class="scrolldown" id="tones">
@@ -162,7 +193,7 @@ empty cell means there is no modulation effect for the Tone
 
 <DIV TYPE=FOOTER>
   <P ALIGN=CENTER STYLE="margin-top: 0.35in; margin-bottom: 0in">
-  Updated 4 February 2020.  Copyright © 2020 by John Hartman, The Old Bald Geek.
+  Updated 30 June 2023.  Copyright © 2023 by John Hartman, The Old Bald Geek.
   </P>
 </DIV>
 

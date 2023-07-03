@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html lang="en-US">
+
+<!--
+To run this editor locally on your PC, start a simple Python websevers
+in the directory where the files reside. By default, listens on port 8000
+   python -m http.server
+-->
+
 <head>
-<title>Old Bald Geek's Roland FP-60/FP-90 Registration Editor Version</title>
+<title>Old Bald Geek's Roland FP-60/FP-90/FP-60X/FP-90X Registration Editor</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="Keywords" content="Roland,FP-60,FP-90,Registration">
-<meta name="Description" content="Simple editor for Roland FP-60 and FP-90 custom Registration (.UPG) files.">
+<meta name="Keywords" content="Roland,FP-60,FP-90,FP-60X,FP-90X,Registration">
+<meta name="Description" content="Simple editor for Roland FP-60, FP-90 FP-60X, and FP-90X custom Registration (.UPG) files.">
 <meta name="robots" content="index, follow">
 
 <style>
@@ -24,11 +31,12 @@ table.scrolldown {
 table.scrolldown td, table.scrolldown th {
    border: 1px solid #ddd;
    padding-left: 8px;
+   padding-right: 8px;
    white-space: nowrap;
 }
 
 table.scrolldown tr:nth-child(even) {
-   background-color: #f2f2f2;
+   background-color: #e9e9ed;
 }
 
 table.scrolldown thead th {
@@ -45,7 +53,7 @@ table.scrolldown.selected {
 
 .tablebuttons {
    vertical-align: top;
-   width: 20%;
+   width: 100px;
 }
 
 .tablecontent {
@@ -62,56 +70,74 @@ table.scrolldown.selected {
 </head>
 
 <body onload="onLoad();">
-<script src="Roland_FP90_tones.js"></script>
 <script src="edit_reg.js"></script>
 
 <script>
 
 // Copied row as JSON, or '' if none copied
-var g_copiedRow = '';
+var s_copiedRow = '';
 
 // Relative URL to the editing page
-var g_editRegPage = 'edit_reg.html';
+var s_editRegPage = 'edit_reg.html';
 
 //-----------------------------------------------------------------------------
 // Initialization
 function onLoad()
 {
-   // Create maps of the Tone list indexed by Name and Bank
-   g_toneList = new ToneList( g_Roland_FP90_tones );
-   g_changeFlag = new ChangeFlag( 'changed' );
+    g_changeFlag = new ChangeFlag( 'changed' );
 
-   // If there is data in sessionStorage, load and use it.
-   if (sessionStorage.getItem( 'fp_regVersion' ) == g_sessionDataCookie ) {
-      // Same version.  COULD do more sanity checks here
+    // See if a previous page has set the piano type
+    let pianoType = sessionStorage.getItem( 'fp_pianoType' );
+    if (pianoType != null) {
+        console.log('Session storage specifies ' + pianoType);
+        let sel = document.getElementById('pianoType');
+        sel.value = pianoType;
+    }
 
-      // Parse the data, fill screen controls
-      ParseFile( sessionStorage.getItem( 'fp_regFile' ),
-                 sessionStorage.getItem( 'fp_regData' ),
-                 false );
+    do_select_piano();
+}
 
-      g_selectedRow = sessionStorage.getItem( 'fp_regNumber' ) - 1;
-      if (g_selectedRow >= 0) {
-         SelectRow( g_selectedRow );
+//-----------------------------------------------------------------------------
+// User selection of piano type
+function do_select_piano()
+{
+    // TODO: if change flag is set after edit, saving current data before changing type.
+    var sel = document.getElementById('pianoType');
+    SelectPiano(sel.value);
 
-         // Scroll to the edit controls.
-         // We tried scrollInforView on the ROW, but that puts the ROW
-         // on the left margin, hiding the edit buttons.
-         document.getElementById('filename').scrollIntoView();
-      }
+    MakeToneList( g_pianoInfo.tone_list_name, function() {
+        // If there is data in sessionStorage, load and use it.
+        if (sessionStorage.getItem( 'fp_regVersion' ) == g_sessionDataCookie) {
+            // Same version.  COULD do more sanity checks here
 
-      g_copiedRow = sessionStorage.getItem( 'fp_copiedRow' );
+            // Parse the data, fill screen controls
+            ParseFile( sessionStorage.getItem( 'fp_regFile' ),
+                sessionStorage.getItem( 'fp_regData' ),
+                false );
 
-      // If edit changed the data, set change indicator
-      let changed = sessionStorage.getItem( 'fp_changed' );
-      if (changed == 'true') {
-         g_changeFlag.Set();
-      }
-   }
-   else {
-      // No saved data: read the sample file
-      readFromServer('FP60_90_IDEAS.UPG');
-   }
+            g_selectedRow = sessionStorage.getItem( 'fp_regNumber' ) - 1;
+            if (g_selectedRow >= 0) {
+                SelectRow( g_selectedRow );
+
+                // Scroll to the edit controls.
+                // We tried scrollInforView on the ROW, but that puts the ROW
+                // on the left margin, hiding the edit buttons.
+                document.getElementById('filename').scrollIntoView();
+            }
+
+            s_copiedRow = sessionStorage.getItem( 'fp_copiedRow' );
+
+            // If edit changed the data, set change indicator
+            let changed = sessionStorage.getItem( 'fp_changed' );
+            if (changed == 'true') {
+                g_changeFlag.Set();
+            }
+        }
+        else {
+            // No saved data: read the sample file
+            readFromServer( 'ideas' );
+        }
+    });
 }
 
 //-----------------------------------------------------------------------------
@@ -127,7 +153,7 @@ function FillRegistrationList()
    }
 
    // Fill the list
-   for (let ix = 0; ix < g_upg.registration.length; ix++) {
+   for (ix = 0; ix < g_upg.registration.length; ix++) {
       let reg = g_upg.registration[ix];
 
       let row = table.insertRow();
@@ -190,7 +216,7 @@ function ParseFile( a_filename, a_text, a_initialEdit = true )
       FillRegistrationList();
    }
    catch(e) {
-      alert( '"' + a_filename + '" is not a valid Roland Registration file.\n'
+      alert( '"' + a_filename + '" is not valid for this type of piano.\n'
              + e.toString() );
    }
 
@@ -246,6 +272,13 @@ function WarnUnsavedChanges()
 function readFromServer( a_fileUrl )
 {
    if (WarnUnsavedChanges()) {
+      if (a_fileUrl == 'defaults') {
+         a_fileUrl = g_pianoInfo.def_regs_name;
+      }
+      else if (a_fileUrl == 'ideas') {
+         a_fileUrl = g_pianoInfo.ideas_name;
+      }
+
       let request = new XMLHttpRequest();
       request.open( 'GET', a_fileUrl + '?' + (new Date()).getTime() );
       request.responseType = 'text';
@@ -376,14 +409,14 @@ function onCopyRow()
 {
    if (g_selectedRow >= 0)
    {
-      g_copiedRow = JSON.stringify( g_upg.registration[ g_selectedRow ] );
+      s_copiedRow = JSON.stringify( g_upg.registration[ g_selectedRow ] );
 
       // Show the title of the copied row near the Paste button
       const clipBoard = document.getElementById('clipBoard');
       clipBoard.innerHTML = g_upg.registration[ g_selectedRow ].name;
 
       // Persist the data, so COPY can be used between files.
-      sessionStorage.setItem( 'fp_copiedRow', g_copiedRow );
+      sessionStorage.setItem( 'fp_copiedRow', s_copiedRow );
    }
 }
 
@@ -391,22 +424,24 @@ function onCopyRow()
 // Paste over the selected row
 function onPasteRow()
 {
-   if ((g_selectedRow >= 0) && g_copiedRow)
-   {
-      try {
-         g_upg.registration[ g_selectedRow ] = JSON.parse( g_copiedRow );
-      }
-      catch(e) {
-         // Can't paste.  Delete the bad clipboard data
-         g_copiedRow = '';
-         sessionStorage.setItem( 'fp_copiedRow', g_copiedRow );
-      }
+    if ((g_selectedRow >= 0) && s_copiedRow)
+    {
+        try {
+            reg = JSON.parse( s_copiedRow );
+            // Make the Registration compatible with this piano
+            g_upg.registration[ g_selectedRow ] = refit_reg( reg );
+        }
+        catch(e) {
+            // Can't paste.  Delete the bad clipboard data
+            s_copiedRow = '';
+            sessionStorage.setItem( 'fp_copiedRow', s_copiedRow );
+        }
 
-      // Redraw
-      FillRegistrationList();
-      SelectRow( g_selectedRow )
-      g_changeFlag.Set();
-   }
+        // Redraw
+        FillRegistrationList();
+        SelectRow( g_selectedRow );
+        g_changeFlag.Set();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -432,8 +467,8 @@ function onEditRow()
       UpdateStorage();
 
       // Navigate to the editor page
-      window.location.assign( g_editRegPage );
-      // Return from the editor page will cauyse reload
+      window.location.assign( s_editRegPage );
+      // Return from the editor page will cause reload
    }
 }
 
@@ -442,7 +477,7 @@ function onEditRow()
 function onAbout()
 {
    let email = 'junk@junkdebugger';
-   alert( 'Copyright (c) 2020 by John Hartman, aka OldBaldGeek.\n' +
+   alert( 'Copyright (c) 2023 by John Hartman, aka OldBaldGeek.\n' +
           'Contact me at ' + email.replace( /junk/g, 'noice' ) + '.com' );
 }
 
@@ -480,37 +515,50 @@ function onPedalChanges( a_event )
 <IMG src="KittyRegSet.png" alt="Old Bald Geek's Roland Piano Information"  width=180 height=116>
 </a>
 
-<h1>Old Bald Geek's Roland FP-60/FP-90 Registration Editor Version 2.0</h1>
+<h1>Old Bald Geek's Roland FP-60/FP-90/FP-60X/FP-90X Registration Editor Version 2.1</h1>
 
 <p>This simple editor allows you to edit custom Registration files from and
-for the Roland FP-60 and FP-90 digital pianos. To use the editor:</p>
+for the Roland FP-60, FP-90, FP-60X, and FP-90X digital pianos. To use the editor:</p>
 <ul>
-<li>Specify a UPG file to edit using one of the buttons below.
-<li>Select a row in the list of Registrations.
+<li>Select the type of piano (alas, the file details differ)</li>
+<li>Specify a UPG file to edit using one of the buttons below.</li>
+<li>Select a row in the list of Registrations.</li>
 <li>Use "Edit Row" (or double-click the row) to make changes to the selected Registration.
-For explanations of an item, click the "?" nearest the item or its group.
+For explanations of an item, click the "?" nearest the item or its group.</li>
 <li>Use the buttons on this page to change the order of the Registrations, or to
 make a copy of a Registration for further editing.
 The "Location" column shows where the Registration will appear for selection
 on the piano. For example, to select a Registration with locaion "E.Piano 2",
-press the piano's "Registration" button, press "E.Piano", and press "+".
+press the piano's "Registration" button, press "E.Piano", and press "+".</li>
 <li>When you are done, use "Download edited file" to save the result to a file
-on your computer.
+on your computer.</li>
 <li>Copy the saved file onto a USB Flash drive, and import it to the piano
-by using Function 25, “Reg. Set Import.” Note that the piano uses old-school
+by using Function “Reg. Set Import.” Note that the piano uses old-school
 DOS-style filenames: eight or fewer characters, a dot, and a UPG extension.
+So you may need to rename the file appropriately before the piano will load it.</li>
 </ul>
 
+<fieldset><legend>Specify the type of piano (this will configure appropriate options)</legend>
+   <select style="width:40%;" id="pianoType" onchange="do_select_piano()">
+      <option>FP-60</option>
+      <option selected>FP-90</option>
+      <option>FP-60X</option>
+      <option>FP-90X</option>
+   </select></label>
+</fieldset>
+
 <fieldset><legend>Specify a UPG file to edit</legend>
-   <input type="button" class="tablebutton" value="Roland Defaults, as exported from a new piano (DEF_REGS.UPG)" onclick="readFromServer('FP60_90_FACTORY_REGS.UPG');">
-   <input type="button" class="tablebutton" value="Some examples of things you can do with Registrations (IDEAS.UPG)" onclick="readFromServer('FP60_90_IDEAS.UPG');">
+   <div style="width:40%;">
+   <input type="button" class="tablebutton" value="Roland Defaults, as exported from a new piano (DEF_REGS.UPG)" onclick="readFromServer('defaults');">
+   <input type="button" class="tablebutton" value="Some examples of things you can do with Registrations (IDEAS.UPG)" onclick="readFromServer('ideas');">
    <input type="file"   style="display:none" id="input" onchange="uploadFile(this.files);">
-   <input type="button" class="tablebutton" value="Upload your own file, which you can export from your piano using Function 24, 'Reg. Set Export'"
+   <input type="button" class="tablebutton" value="Upload your own file, which you can export from your piano using Function 'Reg. Set Export'"
     onclick="doUpload();">
+   </div>
 </fieldset>
 
 <fieldset><legend id="filename">Editing</legend>
-   <label>Notes <textarea id="comment" class="notetext" maxlength="640" cols="80" wrap="soft" onchange="onChangedNote();"></textarea></label>
+   <label>Notes <textarea style="width:30%;" id="comment" class="notetext" maxlength="640" wrap="soft" onchange="onChangedNote();"></textarea></label>
    <input type="button" value="?" onclick="onHelp('comment');">
 
    <br><label>Pedal changes Registration
@@ -560,7 +608,7 @@ DOS-style filenames: eight or fewer characters, a dot, and a UPG extension.
 
 <DIV TYPE=FOOTER>
   <P ALIGN=CENTER STYLE="margin-top: 0.35in; margin-bottom: 0in">
-  Updated 28 February 2020.  Copyright © 2020 by John Hartman, The Old Bald Geek.
+  Updated 29 June 2023.  Copyright © 2023 by John Hartman, The Old Bald Geek.
   </P>
 </DIV>
 

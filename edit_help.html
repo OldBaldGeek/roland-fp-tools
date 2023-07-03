@@ -2,10 +2,10 @@
 <html lang="en-US">
 
 <head>
-<title>Roland FP-60/FP-90 Registration Editing Help</title>
+<title>Roland FP Registration Editing Help</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="Keywords" content="Roland,FP-60,FP-90,Registration,Tones,MIDI">
+<meta name="Keywords" content="Roland,FP-60,FP-90,FP-60X,FP-90X,Registration,Tones,MIDI">
 <meta name="Description" content="Editor for Roland FP-60 and FP-90 custom Registration (.UPG) files.">
 <meta name="robots" content="index, follow">
 
@@ -38,15 +38,17 @@ editor, and each line of a Registration, showing where it comes from if
 you create the Registration on the piano, and some information about
 the range and purpose of the setting.</P>
 
-<P>You can get more information about each "Function XX" in the &ldquo;FP-90 Owner's Manual&rdquo;,
-<a href="https://www.roland.com/global/support/by_product/fp-90/owners_manuals/" target="_blank">
+<P>You can get more information about most of these items in the
+&ldquo;Various Settings (Function Mode)&rdquo; section of the Owner's Manual
+for your piano,
+<a href="https://www.roland.com/global/support/owners_manuals/" target="_blank">
 available on the Roland website.</a></P>
-
 
 <h3 id="registrationPedalShift">Registration Pedal Shift</h3>
 <P class="regtext">&quot;registrationPedalShift&quot;: 0,</P>
 
-<P CLASS="indent">This is the value of Function 23, &ldquo;Reg. Pedal Shift&rdquo;,
+<P CLASS="indent">This is the value of &ldquo;Reg. Pedal Shift&rdquo;,
+(Function 23 on the FP-90)
 when the file is exported.  0 = off, 1 = left pedal, 2 = center pedal.
 This item is at the top of the Registration file, and affects all Registrations.</P>
 
@@ -77,9 +79,9 @@ on the LCD when the Registration is selected.
 
 <P CLASS="indent">This field is 
 not a standard part of the UPG file.  It was added to our editor to aid in
-understanding the capabilities of Registrations.  <b>Notes</b> fields in a Registration
+understanding the capabilities of Registrations.  <b>Notes/comments</b> fields in a Registration
 file will be ignored by the piano.  A Registration file exported by the piano
-will not contain any <b>Notes</b> fields.</P>
+will not contain any <b>Notes/comments</b> fields.</P>
 
 
 <h3 id="singleTone">Tone (Main/Upper Tone)</h3>
@@ -94,10 +96,10 @@ file specifies the Tone by its MIDI components, Bank and Program.  The editor
 converts between the formats.</P>
 
 <P CLASS="indent">You can <a href="tones.html">read more about Tones</a>, 
-or look up the bank and program numbers in the document 
-&ldquo;FP-90 / FP-60 MIDI Implementation&rdquo;,
-<a href="https://www.roland.com/global/support/by_product/fp-90/owners_manuals/" target="_blank">
-available on the Roland website.</a></P>
+or look up the bank and program numbers in the  
+&ldquo;MIDI Implementation Manual&rdquo; for your piano, available in
+<a href="https://www.roland.com/global/support/owners_manuals/" target="_blank">
+the Owner's Manual secction of the Roland website.</a></P>
 
 <P class="regtext">&quot;singleToneMSB&quot;: 0,<BR>
 &quot;singleToneLSB&quot;: 68,<BR>
@@ -135,11 +137,17 @@ a Registration is selected, transmits MIDI CC7 on the channel
 specified by <B><a href="#midiTxCh">midiTxCh</a></B>.</P>
 
 
-<h3 id="ambience">Ambience</h3>
+<h3 id="ambience">Ambience Type (FP-60X and FP-90X)</h3>
+<P class="regtext">&quot;ambienceType&quot;: 2,</P>
+<P CLASS="indent">Value of Ambience Type when the Registration is saved.</P>
+
+<P CLASS="indent">This item is present on the FP-60X and FP-90X, but not on the FP-60 or FP-90</P>
+
+
+<h3 id="ambience">Ambience (Ambience Depth on the FP-60X and FP-90X)</h3>
 <P class="regtext">&quot;ambience&quot;: 2,</P>
-<P CLASS="indent">Value
-of Ambience when the Registration is saved. 0 (none) to 10 (large
-space).</P>
+<P CLASS="indent">Value of Ambience or Ambience Depth when the Registration is
+saved. 0 (none) to 10 (large space).</P>
 
 <P CLASS="indent">When
 a Registration is selected, a value based on <B>ambience</B> is
@@ -206,20 +214,28 @@ Registration setting to set the initial value.</P>
 <h3 id="keyTouch">Key Touch</h3>
 <P class="regtext">&quot;keyTouch&quot;:
 50,</P>
-<P CLASS="indent">Value
-of Function 1, &ldquo;Key Touch&rdquo;, when the Registration is
-saved. 0 (fixed) to 100.</P>
+<P CLASS="indent">Value of &ldquo;Key Touch&rdquo; (Function 1 on the FP-90)
+when the Registration is saved. 0 (fixed) to 100.</P>
 
 
 <h3 id="keyTranspose">Key Transpose</h3>
 <P class="regtext">&quot;keyTranspose&quot;:
 0,</P>
 <P CLASS="indent">Value
-of Transpose, &ldquo;Kbd Transpose&rdquo; when the Registration is
-saved. -6 to +5.</P>
+of Transpose, &ldquo;Kbd Transpose&rdquo;, when the Registration is saved. -6 to +5.</P>
 
-<P CLASS="indent">This
-setting also transposes MIDI note messages sent by the keyboard.</P>
+<P CLASS="indent">This setting also transposes MIDI note messages sent by the keyboard.</P>
+
+
+<h3 id="keyTransposeSw">Key Transpose Switch (FP-60X and FP-90X)</h3>
+<P class="regtext">&quot;keyTransposeSw&quot;:
+0,</P>
+<P CLASS="indent">Value
+of Transpose on/off, &ldquo;Kbd Transpose&rdquo;, when the Registration is saved. 0 or 1.</P>
+
+<P CLASS="indent">This item is present on the FP-60X and FP-90X, but not on the FP-60 or FP-90.
+It enables or disables Transpose without changing the value of &quot;keyTranspose&quot;
+</P>
 
 
 <h3 id="songTranspose">Song Transpose</h3>
@@ -258,12 +274,11 @@ shows a drop-list, from which you can select a Tone by Name.  The Registration
 file specifies the Tone by its MIDI components, Bank and Program.  The editor
 converts between the formats.</P>
 
-<P CLASS="indent">
-You can <a href="tones.html">read more about Tones</a>, 
-or look up the bank and program numbers in the document &ldquo;FP-90
-/ FP-60 MIDI Implementation&rdquo;,
-<a href="https://www.roland.com/global/support/by_product/fp-90/owners_manuals/" target="_blank">
-available on the Roland website.</a></P>
+<P CLASS="indent">You can <a href="tones.html">read more about Tones</a>, 
+or look up the bank and program numbers in the 
+&ldquo;MIDI Implementation Manual&rdquo; for your piano, available in
+<a href="https://www.roland.com/global/support/owners_manuals/" target="_blank">
+the Owner's Manual secction of the Roland website.</a></P>
 
 <P class="regtext">
 &quot;splitLowerToneMSB&quot;: 0,</BR>
@@ -320,12 +335,12 @@ shows a drop-list, from which you can select a Tone by Name.  The Registration
 file specifies the Tone by its MIDI components, Bank and Program.  The editor
 converts between the formats.</P>
 
-<P CLASS="indent">
-You can <a href="tones.html">read more about Tones</a>, 
-or look up the bank and program numbers in the document &ldquo;FP-90
-/ FP-60 MIDI Implementation&rdquo;, 
-<a href="https://www.roland.com/global/support/by_product/fp-90/owners_manuals/" target="_blank">
-available on the Roland website.</a></P>
+
+<P CLASS="indent">You can <a href="tones.html">read more about Tones</a>, 
+or look up the bank and program numbers in the 
+&ldquo;MIDI Implementation Manual&rdquo; for your piano, available in
+<a href="https://www.roland.com/global/support/owners_manuals/" target="_blank">
+the Owner's Manual secction of the Roland website.</a></P>
 
 <P class="regtext">
 &quot;dualTone2MSB&quot;: 1,</BR>
@@ -368,19 +383,17 @@ setting also transposes MIDI note messages sent by the keyboard.</P>
 <h3 id="damperPedalPart">Right Pedal affects (Pedals)</h3>
 <P class="regtext">&quot;damperPedalPart&quot;:
 0,</P>
-<P CLASS="indent">Value
-of Function 18, &ldquo;Damper Pedal Part&rdquo;, when the
-Registration is saved.  0 = both, 1 = right/Tone1,  2 = left/Tone2.</P>
+<P CLASS="indent">Value of &ldquo;Damper Pedal Part&rdquo; (Function 18 on the
+FP-90) when the Registration is saved.  0 = both, 1 = right/Tone1,  2 = left/Tone2.</P>
 
-<P CLASS="indent">The function
-of the left pedal is always "Damper".</P>
+<P CLASS="indent">The function of the left pedal is always "Damper".</P>
 
 
 <h3 id="centerPedalPart">Center Pedal affects (Pedals)</h3>
 <P class="regtext">&quot;centerPedalPart&quot;:
 0,</P>
-<P CLASS="indent">Value
-of Function 20, &ldquo;Center Pedal Part&rdquo;, when the Registration is saved.
+<P CLASS="indent">Value of &ldquo;Center Pedal Part&rdquo; (Function 20 on the
+FP-90) when the Registration is saved.
 0 = both, 1 = right/Tone1, 2 = left/Tone2.</P>
 
 
@@ -389,7 +402,8 @@ of Function 20, &ldquo;Center Pedal Part&rdquo;, when the Registration is saved.
 0,</P>
 
 <P CLASS="indent" STYLE="margin-left: 0.75in; text-indent: -0.26in">
-Value of Function 19, &ldquo;Center Pedal&rdquo;, when the Registration is saved.</BR>
+Value of &ldquo;Center Pedal&rdquo; (Function 19 on the FP-90) when the
+Registration is saved.</BR>
 0	Sustenuto (standard piano function).  Also sends CC 66 when the pedal is pressed.</BR>
 1	Play/stop switch.  Start and stop recorded songs.</BR>
 2	Layer.  An analog pedal like the DP-10 will control the volume of dual Tone 2 and send CC 11 on MIDI channel 6.</BR>
@@ -410,8 +424,8 @@ is set to "center pedal."
 
 <h3 id="leftPedalPart">Left Pedal affects (Pedals)</h3>
 <P class="regtext">&quot;leftPedalPart&quot;: 0,</P>
-<P CLASS="indent">Value
-of Function 22, &ldquo;Left Pedal Part&rdquo;, when the Registration is saved.
+<P CLASS="indent">Value of &ldquo;Left Pedal Part&rdquo; (Function 22 on the
+FP-90) when the Registration is saved.
 0 = both, 1 = right/Tone1, 2 = left/Tone2.</P>
 
 
@@ -419,7 +433,8 @@ of Function 22, &ldquo;Left Pedal Part&rdquo;, when the Registration is saved.
 <P class="regtext">&quot;leftPedalFunc&quot;: 0,</P>
 
 <P CLASS="indent" STYLE="margin-left: 0.75in; text-indent: -0.26in">
-Value of Function 21, &ldquo;Left Pedal&rdquo;, when the Registration is saved.</BR>
+Value of &ldquo;Left Pedal&rdquo; (Function 21 on the FP-90) when the
+Registration is saved.</BR>
 0	Soft (standard piano function).  Also sends CC 67.</BR>
 1	Play/stop switch.  Start and stop recorded songs.</BR>
 2	Layer.  An analog pedal like the DP-10 will control the volume of dual Tone 2 and send CC 11 on MIDI channel 6.</BR>
@@ -440,9 +455,8 @@ is set to "left pedal."
 
 <h3 id="midiTxCh">Keyboard MIDI Tx Channel (MIDI)</h3>
 <P class="regtext">&quot;midiTxCh&quot;: 1,</P>
-<P CLASS="indent">Value
-of Function 31, &ldquo;MIDI Transmit Ch.&rdquo;, when the
-Registration is saved.  0 = off, 1 to 16.</P>
+<P CLASS="indent">Value of &ldquo;MIDI Transmit Ch.&rdquo; (Function 31 on the
+FP-90) when the Registration is saved.  0 = off, 1 to 16.</P>
 
 <P CLASS="indent">This
 value specifies the channel used to send MIDI messages about the
@@ -454,16 +468,16 @@ dual always sends on MIDI channel 6 regardless of the value of
 
 <h3 id="registrationTxCh">MIDI Tx Channel (Send When this Registration is Selected)</h3>
 <P class="regtext">&quot;registrationTxCh&quot;: 0,</P>
-<P CLASS="indent">Value
-of Function 26, &ldquo;Reg. Transmit Ch.&rdquo;, when the Registration is saved.
-0 = off, 1 to 16.</P>
+<P CLASS="indent">Value of &ldquo;Reg. Transmit Ch.&rdquo; (Function 26 on the
+FP-90) when the Registration is saved. 0 = off, 1 to 16.</P>
 
 
 <h3 id="registrationBankMSB">Bank MSB, LSB, Program (Send When this Registration is Selected)</h3>
 <P class="regtext">&quot;registrationBankMSB&quot;: 0,</P>
 <P class="regtext" id="registrationBankMSB">&quot;registrationBankLSB&quot;: 0,</P>
 <P class="regtext" id="registrationBankMSB">&quot;registrationPC&quot;: 0</P>
-<P CLASS="indent">Value of Functions 27, 28, 20 when the Registration is saved.</P>
+<P CLASS="indent">Values of &quot;Reg.BankMSB&quot;, &quot;Reg.BankLSB&quot;,
+and &quot;Reg.BankPC&quot; (Functions 27, 28, 20 on the FP-90) when the Registration is saved.</P>
 
 <P CLASS="indent">
 The explanation for <B><a href="#singleToneMSB">singleToneMSB</a></B> 
@@ -513,8 +527,7 @@ of Mic Doubling Type when the Registration is saved.  1 or 2 voices.</P>
 
 <h3 id="micDoublingWidth">Doubling Width (Microphone)</h3>
 <P class="regtext">&quot;micDoublingWidth&quot;: 1,</P>
-<P CLASS="indent">Value
-of Mic Doubling Width when the Registration is saved.  light, normal, deep.</P>
+<P CLASS="indent">Value of Mic Doubling Width when the Registration is saved.  light, normal, deep.</P>
 
 
 <h3 id="micDoublingLevel">Doubling Level (Microphone)</h3>
@@ -544,43 +557,37 @@ of Mic Echo Type when the Registration is saved.  0 to 7.</P>
 Registration is saved.  0 to 10.</P>
 
 
-<h3 id="splitBalance">Split Balance (Cruft)</h3>
-<P class="regtext">&quot;splitBalance&quot;:
-0,</P>
-<P CLASS="indent">I
-don't know what this does.  It is 0 in all the default Registrations.</P>
+<h3 id="twinPianoMode">Twin Piano Mode (FP-60X and FP-90X)</h3>
+<P class="regtext">&quot;twinPianoMode&quot;: 0,</P>
 
-<P CLASS="indent">I
-can imagine some usefulness in being able to pan left and right Tones
-between the speakers.  But I changed <B>splitBalance</B> to -5 and +5
+<P CLASS="indent">On the FP-60X and FP-90X, this is the value of Twin Piano
+when the Registration is saved. Twin Piano splits the keyboard in two, each with
+a middle C, in order to let two people play duets in the same pitch range.</p>
+
+<P CLASS="indent">The FP-60 and FP-90 do not have the Twin Piano feature, but
+this item is still found in Registration files, where it seems to have no
+effect. If you <i>did</i> want Dual Piano Mode on an FP-60 or FP-90, you could
+program a split, and shift the octaves of each half to the desired range</P>
+
+
+<h3 id="splitBalance">Split Balance (Cruft?)</h3>
+<P class="regtext">&quot;splitBalance&quot;: 0,</P>
+<P CLASS="indent">I don't know what this does.  It is 0 in all the default Registrations.</P>
+
+<P CLASS="indent">I can imagine some usefulness in being able to pan left and
+right Tones between the speakers.  But I changed <B>splitBalance</B> to -5 and +5
 and couldn't hear any difference.</P>
 
 
-<h3 id="dualBalance">Dual Balance (Cruft)</h3>
-<P class="regtext">&quot;dualBalance&quot;:
--5,</P>
-<P CLASS="indent">As
-with <B><a href="#splitBalance">splitBalance</a></B>, I don't know what this does.
-It is -5 in all the default Registrations.</P>
+<h3 id="dualBalance">Dual Balance (Cruft?)</h3>
+<P class="regtext">&quot;dualBalance&quot;: -5,</P>
+<P CLASS="indent">As with <B><a href="#splitBalance">splitBalance</a></B>, I
+don't know what this does. It is -5 in all the default Registrations.</P>
 
-
-<h3 id="twinPianoMode">Twin Piano Mode (Cruft)</h3>
-<P class="regtext">&quot;twinPianoMode&quot;:
-1,</P>
-<P CLASS="indent">I don't know what this does.  It is 1 in all the default Registrations.
-The FP-30 has something called &ldquo;twin mode&rdquo; that splits
-the keyboard in two, each with a middle C, in order to let two people
-play duets in the same pitch range.  There is no mention of such a
-thing in the FP-90 manual, and my tests found no effect when this
-value was changed.</P>
-
-<P CLASS="indent">If you <i>did</i> want Dual Piano Mode, you could program a
-split, and shift the octaves of each half to the desired range</P>
 
 <DIV TYPE=FOOTER>
   <P ALIGN=CENTER STYLE="margin-top: 0.35in; margin-bottom: 0in">
-  Updated 6 February 2020.  Copyright © 2020 by John Hartman, The Old Bald Geek.
-  </P>
+  Updated 3 July 2023.  Copyright © 2023 by John Hartman, The Old Bald Geek.</P>
 </DIV>
 </BODY>
 </HTML>

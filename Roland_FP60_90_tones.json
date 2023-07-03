@@ -1,4 +1,3 @@
-g_Roland_FP90_tones =
 [
     {
         "Category": "Piano",
@@ -4212,4 +4211,4 @@ g_Roland_FP90_tones =
         "modulationSpeed": "",
         "MSB": "121"
     }
-];
+]

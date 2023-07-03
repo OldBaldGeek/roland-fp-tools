@@ -22,155 +22,102 @@
 </head>
 
 <body onload="onLoad();">
-<script src="Roland_FP90_tones.js"></script>
 <script src="edit_reg.js"></script>
 
 <script>
-//-----------------------------------------------------------------------------
-// Names of editor controls, most of which match Registration key names
-// Drives the editor
-var g_miscItemNames = [
-   'name',
-   'comment',
-
-   'singleTone',                // Generated from MSB/LSB/PC
-   //'singleToneMSB',
-   //'singleToneLSB',
-   //'singleTonePC',
-
-   'splitLowerTone',            // Generated from MSB/LSB/PC
-   //'splitLowerToneMSB',
-   //'splitLowerToneLSB',
-   //'splitLowerTonePC',
-
-   'dualTone2',                 // Generated from MSB/LSB/PC
-   //'dualTone2MSB',
-   //'dualTone2LSB',
-   //'dualTone2PC',
-
-   'keyboardMode',
-   'splitOctaveShift',
-   'splitUpperOctaveShift',
-   'splitPoint',
-   'dualOctaveShift',
-   'dualTone1OctaveShift',
-
-   'damperPedalPart',
-   'centerPedalPart',
-   'centerPedalFunc',
-   'leftPedalPart',
-   'leftPedalFunc',
-
-   'rotarySpeed',
-   'modulationSpeed',
-   'upperVolume',
-   'lowerVolume',
-
-   'ambience',
-   'keyTouch',
-   'keyTranspose',
-   'songTranspose',
-
-   'midiTxCh',
-   'registrationTxCh',
-   'registrationBankMSB',
-   'registrationBankLSB',
-   'registrationPC',
-
-   'micCompSw',
-   'micCompType',
-   'micDoublingSw',
-   'micDoublingType',
-   'micDoublingWidth',
-   'micDoublingLevel',
-   'micEchoSw',
-   'micEchoType',
-   'micEchoLevel',
-
-   'splitBalance',
-   'dualBalance',
-   'twinPianoMode'
-];
 
 // Relative URL to the main editor page (list)
-var g_editRegPage = 'edit_list.html';
+var s_listRegPage = 'edit_list.html';
 
 //-----------------------------------------------------------------------------
 // Initialization
 function onLoad()
 {
-   // Create maps of the Tone list indexed by Name and Bank
-   g_toneList = new ToneList( g_Roland_FP90_tones );
+    let pianoType = sessionStorage.getItem( 'fp_pianoType' );
+    if (pianoType != null) {
+        console.log('Session storage specifies ' + pianoType);
+        SelectPiano(pianoType);
 
-   g_changeFlag = new ChangeFlag( 'save' );
+        MakeToneList( g_pianoInfo.tone_list_name, function() {
+            g_changeFlag = new ChangeFlag( 'save' );
 
-   // Fill the Tone drop-lists
-   g_toneList.FillList( 'singleTone', true );
-   g_toneList.FillList( 'splitLowerTone', true );
-   g_toneList.FillList( 'dualTone2', true );
+            // Fill the Tone drop-lists
+            g_toneList.FillList( 'singleTone', true );
+            g_toneList.FillList( 'splitLowerTone', true );
+            g_toneList.FillList( 'dualTone2', true );
 
-   // Fill the split point drop-list
-   FillNoteNameList( 'splitPoint' );
+            // Fill the split point drop-list
+            FillNoteNameList( 'splitPoint' );
 
-   // We operate on parameters given to us in sessionData.
-   if (sessionStorage.getItem( 'fp_regVersion' ) == g_sessionDataCookie ) {
-      // Same version.  COULD do more sanity checks here
-      g_filename = sessionStorage.getItem( 'fp_regFile' );
-      g_filename = sessionStorage.getItem( 'fp_regFile' );
-      g_selectedRow = sessionStorage.getItem( 'fp_regNumber' ) - 1;
-      try {
-         g_upg = JSON.parse( sessionStorage.getItem( 'fp_regData' ) );
-      }
-      catch(e) {
-         // Failed to read.  Return to main edit page below
-         alert( e.toString() );
-         g_filename = '';
-         g_selectedRow = -1;
-         g_upg = null;
-      }
-   }
+            // We operate on parameters given to us in sessionData.
+            if (sessionStorage.getItem( 'fp_regVersion' ) == g_sessionDataCookie ) {
+                // Same version.  COULD do more sanity checks here
+                g_filename = sessionStorage.getItem( 'fp_regFile' );
+                g_filename = sessionStorage.getItem( 'fp_regFile' );
+                g_selectedRow = sessionStorage.getItem( 'fp_regNumber' ) - 1;
+                try {
+                    g_upg = JSON.parse( sessionStorage.getItem( 'fp_regData' ) );
+                }
+                catch(e) {
+                    // Failed to read.  Return to main edit page below
+                    alert( 'Failed to read Registration data.\n' + e.toString() );
+                    g_filename = '';
+                    g_selectedRow = -1;
+                    g_upg = null;
+                }
+            }
 
-   if (g_upg == null) {
-      // We don't have the necessary data.  Force to the main edit page
-      window.location.replace( g_editRegPage );
-   }
+            if (g_upg == null) {
+                // We don't have the necessary data.  Force to the main edit page
+                window.location.replace( s_listRegPage );
+            }
 
-   // Fill the edit controls
-   let reg = g_upg.registration[ g_selectedRow ];
+            // Fill the edit controls
+            let reg = g_upg.registration[ g_selectedRow ];
 
-   // Page title
-   let control = document.getElementById( 'Location' );
-   control.innerHTML = 'Edit Registration ' + (g_selectedRow+1) + ' (' +
-                       RegIndexAsLocation( g_selectedRow ) + ')';
+            // Page title
+            let control = document.getElementById( 'Location' );
+            control.innerHTML = 'Edit Registration ' + (g_selectedRow+1) + ' (' +
+                               RegIndexAsLocation( g_selectedRow ) + ')';
 
-   for (let ix = 0; ix < g_miscItemNames.length; ix++)
-   {
-      let propID = g_miscItemNames[ix];
-      let control = document.getElementById( propID );
-      if (control != null)
-      {
-         let value = GetSafeRegProperty( reg, propID );
-         if ((value == null) && (propID in g_defaultRegValues))
-         {
-            // No value in local storage: get a default value
-            value = g_defaultRegValues[ controlID ];
-         }
+            for (let ix = 0; ix < g_itemInfo.length; ix++)
+            {
+                let propID = g_itemInfo[ix].name;
+                let control = document.getElementById( propID );
+                if (control != null)
+                {
+                    // Hide or show control based on piano type
+                    if (g_itemInfo[ix].hasItem(g_pianoInfo.typeName)) {
+                        control.parentNode.style.visibility = 'visible';
 
-         if (value != null) {
-            SetControlValue( control, value );
-         }
+                        let value = GetSafeRegProperty( reg, propID );
+                        if (value == null)
+                        {
+                            // No value in local storage: get a default value
+                            value = g_itemInfo[ix].default_value;
+                        }
 
-         // Ask to be notified when the control changes
-         control.onchange = onChanged;
-      }
-   }
+                        if (value != null) {
+                            SetControlValue( control, value );
+                        }
 
-   // Hook up handler to toggle hiding
-   // TODO: Ideally, a cookie or localStorage parameter would persist the
-   // user's preferences and hide as requested.
-   document.getElementById( 'Microphone' ).onclick = toggleHide;
-   document.getElementById( 'MIDI' ).onclick = toggleHide;
-   document.getElementById( 'Cruft' ).onclick = toggleHide;
+                        // Ask to be notified when the control changes
+                        control.onchange = onChanged;
+                    }
+                    else {
+                        control.parentNode.style.visibility = 'hidden';
+                    }
+                }
+            }
+
+            // Hook up handler to toggle hiding
+            // TODO: Ideally, a cookie or localStorage parameter would persist the
+            // user's preferences and hide as requested.
+            document.getElementById( 'Microphone' ).onclick = toggleHide;
+            document.getElementById( 'MIDI' ).onclick = toggleHide;
+            document.getElementById( 'Cruft' ).onclick = toggleHide;
+        });
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -187,12 +134,11 @@ function onSave()
    if (g_changeFlag.Changed()) {
       // Save changed user data into the Registration object
       let reg = g_upg.registration[ g_selectedRow ];
-      for (let ix = 0; ix < g_miscItemNames.length; ix++)
+      for (let ix = 0; ix < g_itemInfo.length; ix++)
       {
-         let propID = g_miscItemNames[ix];
+         let propID = g_itemInfo[ix].name;
          let control = document.getElementById( propID );
-         if (control != null) {
-
+         if ((control != null) && g_itemInfo[ix].hasItem(g_pianoInfo.typeName)) {
             let value = GetControlValue( control );
             SetSafeRegProperty( reg, propID, value );
          }
@@ -205,7 +151,7 @@ function onSave()
       sessionStorage.setItem( 'fp_changed', true );
    }
 
-   window.location.replace( g_editRegPage );
+   window.location.replace( s_listRegPage );
 }
 
 //-----------------------------------------------------------------------------
@@ -221,7 +167,7 @@ function onCancel()
    }
 
    // Just go home.  We haven't changed any fp_xxxx
-   window.location.replace( g_editRegPage );
+   window.location.replace( s_listRegPage );
 }
 
 //-----------------------------------------------------------------------------
@@ -263,16 +209,19 @@ function toggleHide( a_event )
 <fieldset><legend>Main/Upper Tone&nbsp;<input type="button" value="?" onclick="onHelp('singleTone');"></legend>
   <label>Tone <select id="singleTone" class=tonelist><option>Tone Names</option></select></label>
   <a href="tones.html">More about Tones</a>
-  <label>&nbsp;Volume <input id="upperVolume" type="number" min="0" max="100" value="100" style="width:4em"></label>
+  <label>&nbsp;Volume <input id="upperVolume" type="number" min="0" max="100" value="10" style="width:4em"></label>
   <p>
-  <label>Ambience <input id="ambience" type="number" min="0" max="10" value="0" style="width:3em"></label>
-  <label>&nbsp;Effect Level <input id="modulationSpeed" type="number" min="0" max="100" value="0" style="width:4em"></label>
+  <label>Ambience <input id="ambience" type="number" min="0" max="100" value="0" style="width:3em"></label>
+  <label>&nbsp;Ambience Type <input id="ambienceType" type="number" min="0" max="10" value="0" style="width:2em"></label>
+  <p>
+  <label>Effect Level <input id="modulationSpeed" type="number" min="0" max="100" value="0" style="width:4em"></label>
   <label>&nbsp;Rotary Effect <select id="rotarySpeed">
       <option>Initially Off</option>
       <option selected>Initially On</option>
     </select></label> Note that you can use a pedal function to toggle the rotary speaker effect.
   <p>
   <label>Key Touch <input id="keyTouch" type="number" min="0" max="100" value="50" style="width:4em"></label>
+  <label>&nbsp;Key Transpose On/Off<input id="keyTransposeSw" type="checkbox" value="0"></label>
   <label>&nbsp;Key Transpose <input id="keyTranspose" type="number" min="-6" max="5" value="0" style="width:4em"></label>
   <label>&nbsp;Song Transpose <input id="songTranspose" type="number" min="-12" max="12" value="0" style="width:4em"></label>
 </fieldset>
@@ -383,15 +332,15 @@ function toggleHide( a_event )
 <p>
 <fieldset><legend id="Cruft">Probable Cruft&nbsp;<input type="button" value="?" onclick="onHelp('splitBalance');"></legend>
 <div>
-  <label>Split Balance <input id="splitBalance" type="number" min="-5" max="5" value="0" style="width:4em">
+  <label>Twin Piano Mode <input id="twinPianoMode" type="number" min="0" max="5" value="0" ></label>
+  <label>&nbsp;Split Balance <input id="splitBalance" type="number" min="-5" max="5" value="0" style="width:4em">
   <label>&nbsp;Dual Balance <input id="dualBalance" type="number" min="-5" max="5" value="0" style="width:4em">
-  <label>&nbsp;Twin Piano Mode <input id="twinPianoMode" type="checkbox"></label>
 </div>
 </fieldset>
 
 <DIV TYPE=FOOTER>
   <P ALIGN=CENTER STYLE="margin-top: 0.35in; margin-bottom: 0in">
-  Updated 28 February 2020.  Copyright © 2020 by John Hartman, The Old Bald Geek.
+  Updated 3 July 2023.  Copyright © 2023 by John Hartman, The Old Bald Geek.
   </P>
 </DIV>
 </body></html>

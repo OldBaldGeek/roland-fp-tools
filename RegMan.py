@@ -1,12 +1,12 @@
 #!/usr/bin/python
 #
-# RegMan.py: Convert between Roland FP60/FP90 UPG files and CSV
+# RegMan.py: Convert between Roland FP60/FP90 UPG or JSON files and CSV
 #
-# Python 2.7
+# Python 3.8
 #
 # Written by John Hartman
 #
-# Updated 15 January 2020
+# Updated June 29 2023
 #
 # TODO: This version uses raw integers from the UPG for enumerated functions.
 # We might consider text values for nicer editing
@@ -33,8 +33,8 @@ import json
 class Tone:
    def __init__( self, a_index, a_location, a_name, a_msb, a_lsb, a_pc, a_category ):
       self.index = a_index              # position in tones list
-      self.location = a_location        # location on FP-90
-      self.name = a_name                # name on FP-90
+      self.location = a_location        # location on FP-90 etc.
+      self.name = a_name                # name on FP-90 etc.
       self.msb = a_msb                  # Bank select hi, lo, and program
       self.lsb = a_lsb
       self.pc = a_pc
@@ -58,7 +58,7 @@ class ToneList:
 
       rowNumber = 1
       index = 0
-      with open( a_fileName, 'rb' ) as csvFile:
+      with open( a_fileName, 'r' ) as csvFile:
          reader = csv.reader( csvFile, dialect='excel' )
          for row in reader:
             if (rowNumber == 1):
@@ -95,9 +95,6 @@ class ToneList:
 g_tones = ToneList()
 
 #=============================================================================
-# Names of the piano's Tone group buttons
-g_groupNames = [ 'Piano', 'E.Piano', 'Strings', 'Organ', 'Pad', 'Other' ]
-
 # Names of Registration items in the UPG, in the order of the UPG
 g_itemNames = [
             'name',
@@ -214,14 +211,15 @@ g_miscItemNames = [
 def ConvertRegistrationUPG( a_inFileName, a_outFileName ):
    print( 'Processing Registration UPG "%s" as "%s"' % (a_inFileName, a_outFileName) )
 
-   with open( a_inFileName, 'rb' ) as upgFile:
+   with open( a_inFileName, 'r' ) as upgFile:
       data = json.load( upgFile )
       print( 'Title is %s' % data['title'] )
       print( 'Version is %s' % data['formatVersion'] )
       print( 'Pedal shift is %s' % data['registrationPedalShift'] )
 
-      with open( a_outFileName, 'wb' ) as csvFile:
-         writer = csv.writer( csvFile, dialect='excel', quoting=csv.QUOTE_NONNUMERIC )
+      with open( a_outFileName, 'w' ) as csvFile:
+         writer = csv.writer( csvFile, dialect='excel', lineterminator='\n',
+                              quoting=csv.QUOTE_NONNUMERIC )
 
          # Create a header row
          header = []
@@ -243,16 +241,32 @@ def ConvertRegistrationUPG( a_inFileName, a_outFileName ):
          group = 0
          ix = 1
          regs = data[ 'registration' ]
-         print( 'Has %d registrations' % len(regs) )
+         nregs = len(regs)
+         print( 'Has %d registrations' % nregs )
+
+         # Names of the piano's Tone group buttons
+         if nregs == 30:
+            # FP-60 or FP-90
+            groupNames = [ 'Piano', 'E.Piano', 'Strings', 'Organ', 'Pad', 'Other' ]
+            regsPerGroup = 6
+         elif nregs == 45:
+            # FP-60X or FP-90X
+            groupNames = [ 'Piano', 'E.Piano', 'Organ', 'String/Pad', 'Synth/Other' ]
+            regsPerGroup = 9
+         else:
+            print( 'ERROR: unknown Registration configuration' )
+            groupNames = [ 'Unknown' ]
+            regsPerGroup = 10000
+
          for reg in regs:
             print( 'Reg (%s,%d) "%s is (%d,%d,%d)"' %
-                   (g_groupNames[group], ix, reg['name'],
+                   (groupNames[group], ix, reg['name'],
                     reg['singleToneMSB'], reg['singleToneLSB'], reg['singleTonePC'])
                  )
 
             # Write the item as a row of CSV
             row = []
-            row.append( '(%s,%d)' % (g_groupNames[group], ix) )
+            row.append( '(%s,%d)' % (groupNames[group], ix) )
 
             row.append( reg['name'] )
 
@@ -273,7 +287,7 @@ def ConvertRegistrationUPG( a_inFileName, a_outFileName ):
             writer.writerow( row )
 
             ix += 1
-            if ix >=6:
+            if ix > regsPerGroup:
                group += 1
                ix = 1
 
@@ -315,8 +329,8 @@ def ConvertRegistrationCSV( a_inFileName, a_outFileName ):
    # output lines, since real json doesn't care.
    # But the FP-90 MAY care, and we want some degree of readability in any case.
    #    json.dump( regs, upgFile, indent=4, separators=(',', ': ') )
-   with open( a_inFileName, 'rb' ) as csvFile:
-      with open( a_outFileName, 'wb' ) as upgFile:
+   with open( a_inFileName, 'r' ) as csvFile:
+      with open( a_outFileName, 'w' ) as upgFile:
 
          # When we converted the UPG to a CSV, we appended "fake headers" for
          # title, formatVersion, and registrationPedalShift.
@@ -395,9 +409,8 @@ def ConvertRegistrationCSV( a_inFileName, a_outFileName ):
 def ConvertToneList( a_inFileName, a_outFileName ):
    print( 'Processing Tone list CSV "%s" as "%s"' % (a_inFileName, a_outFileName) )
 
-   with open( a_inFileName, 'rb' ) as csvFile:
-      with open( a_outFileName, 'wb' ) as jsonFile:
-
+   with open( a_inFileName, 'r' ) as csvFile:
+      with open( a_outFileName, 'w' ) as jsonFile:
          tones = []
          reader = csv.DictReader( csvFile, dialect='excel' )
          for row in reader:
@@ -441,6 +454,8 @@ def main():
             print( 'Error: Must specify a UPG or CSV file' )
 
    else:
+      print( 'To convert a tone-list CSV file to JSON for use by the Registration editor:' )
+      print( '  RegMan.py "Roland FP-90 MIDI Voices.csv"' )
       print( 'To convert a UPG file to a CSV for editing:' )
       print( '  RegMan.py "Roland FP-90 MIDI Voices.csv" infile.upg outfile.csv' )
       print( 'To convert a CSV file to a UPG:' )
